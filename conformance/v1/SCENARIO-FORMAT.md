@@ -8,7 +8,7 @@ Each scenario describes a sequence of LSDP message exchanges and expected behavi
 conformance/v1/scenarios/<scenario-id>.yaml
 ```
 
-The `<scenario-id>` matches the file name (without extension). Indexed in [`manifest.json`](manifest.json).
+The `<scenario-id>` matches the file name (without extension). Indexed in [`../manifest.json`](../manifest.json).
 
 ## Top-level shape
 
