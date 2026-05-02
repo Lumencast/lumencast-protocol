@@ -53,7 +53,8 @@ steps:
       state:
         b: 100
 
-  # Old paths gone, new state in place.
+  # Old paths gone, new state in place. mode:exact enforces no leak.
   - kind: expect-runtime-state
+    mode: exact
     state:
       b: 100
