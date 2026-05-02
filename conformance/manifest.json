@@ -5,7 +5,139 @@
     "lsdp": "1",
     "lsml": "1.0"
   },
-  "comment": "Placeholder manifest. Scenarios and fixtures land iteratively.",
-  "scenarios": [],
-  "fixtures": []
+  "scenarios": [
+    {
+      "id": "subscribe-snapshot-delta",
+      "path": "v1/scenarios/subscribe-snapshot-delta.yaml",
+      "tag": "required",
+      "target": "runtime",
+      "covers": ["LSDP-1#3", "LSDP-1#6"]
+    },
+    {
+      "id": "delta-multiple-patches-atomic",
+      "path": "v1/scenarios/delta-multiple-patches-atomic.yaml",
+      "tag": "required",
+      "target": "runtime",
+      "covers": ["LSDP-1#3.2"]
+    },
+    {
+      "id": "delta-replay-tolerated",
+      "path": "v1/scenarios/delta-replay-tolerated.yaml",
+      "tag": "required",
+      "target": "runtime",
+      "covers": ["LSDP-1#5"]
+    },
+    {
+      "id": "seq-gap-triggers-reconnect",
+      "path": "v1/scenarios/seq-gap-triggers-reconnect.yaml",
+      "tag": "required",
+      "target": "runtime",
+      "covers": ["LSDP-1#5", "LSDP-1#7"]
+    },
+    {
+      "id": "seq-resets-on-scene-changed",
+      "path": "v1/scenarios/seq-resets-on-scene-changed.yaml",
+      "tag": "required",
+      "target": "runtime",
+      "covers": ["LSDP-1#3.3", "LSDP-1#5"]
+    },
+    {
+      "id": "auth-denied-closes",
+      "path": "v1/scenarios/auth-denied-closes.yaml",
+      "tag": "required",
+      "target": "server",
+      "covers": ["LSDP-1#8", "ERROR-CODES#auth_denied"]
+    },
+    {
+      "id": "viewer-cannot-input",
+      "path": "v1/scenarios/viewer-cannot-input.yaml",
+      "tag": "required",
+      "target": "server",
+      "covers": ["LSDP-1#9", "ERROR-CODES#write_forbidden"]
+    },
+    {
+      "id": "operator-input-echoes-as-delta",
+      "path": "v1/scenarios/operator-input-echoes-as-delta.yaml",
+      "tag": "required",
+      "target": "server",
+      "covers": ["LSDP-1#4.2", "LSDP-1#9"]
+    },
+    {
+      "id": "unknown-path-rejected",
+      "path": "v1/scenarios/unknown-path-rejected.yaml",
+      "tag": "required",
+      "target": "server",
+      "covers": ["LSDP-1#4.2", "ERROR-CODES#unknown_path"]
+    },
+    {
+      "id": "invalid-value-rejected",
+      "path": "v1/scenarios/invalid-value-rejected.yaml",
+      "tag": "required",
+      "target": "server",
+      "covers": ["LSDP-1#4.2", "ERROR-CODES#invalid_value"]
+    },
+    {
+      "id": "test-session-namespace",
+      "path": "v1/scenarios/test-session-namespace.yaml",
+      "tag": "required",
+      "target": "server",
+      "covers": ["LSDP-1#9", "LSDP-1#10"]
+    },
+    {
+      "id": "bundle-incompatible-rejects",
+      "path": "v1/scenarios/bundle-incompatible-rejects.yaml",
+      "tag": "required",
+      "target": "runtime",
+      "covers": ["LSML-1#15", "ERROR-CODES#bundle_incompatible"]
+    },
+    {
+      "id": "token-rotation-no-flicker",
+      "path": "v1/scenarios/token-rotation-no-flicker.yaml",
+      "tag": "required",
+      "target": "runtime",
+      "covers": ["LSDP-1#8"]
+    },
+    {
+      "id": "ping-pong-roundtrip",
+      "path": "v1/scenarios/ping-pong-roundtrip.yaml",
+      "tag": "required",
+      "target": "any",
+      "covers": ["LSDP-1#12"]
+    },
+    {
+      "id": "envelope-rejects-future-major",
+      "path": "v1/scenarios/envelope-rejects-future-major.yaml",
+      "tag": "required",
+      "target": "server",
+      "covers": ["LSDP-1#13"]
+    },
+    {
+      "id": "unknown-frame-type-ignored",
+      "path": "v1/scenarios/unknown-frame-type-ignored.yaml",
+      "tag": "recommended",
+      "target": "runtime",
+      "covers": ["LSDP-1#13"]
+    }
+  ],
+  "fixtures": {
+    "client": [
+      "v1/fixtures/client/subscribe-minimal.json",
+      "v1/fixtures/client/subscribe-with-scene-and-session.json",
+      "v1/fixtures/client/input-single-patch.json",
+      "v1/fixtures/client/input-multiple-patches.json",
+      "v1/fixtures/client/ping.json"
+    ],
+    "server": [
+      "v1/fixtures/server/snapshot-empty.json",
+      "v1/fixtures/server/snapshot-with-state.json",
+      "v1/fixtures/server/delta-single-patch.json",
+      "v1/fixtures/server/delta-multiple-patches.json",
+      "v1/fixtures/server/scene-changed.json",
+      "v1/fixtures/server/error-auth-denied.json",
+      "v1/fixtures/server/error-write-forbidden.json",
+      "v1/fixtures/server/error-unknown-path.json",
+      "v1/fixtures/server/error-rate-limit.json",
+      "v1/fixtures/server/pong.json"
+    ]
+  }
 }
