@@ -1,0 +1,71 @@
+name: Bug report
+description: Report a defect in the spec, conformance suite, or schema.
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a clear bug report. The more concrete the repro, the faster we can fix.
+
+        **Reminder** — bugs in a specific SDK belong in that SDK's repo, not here. This repo is for spec, conformance suite, and schema bugs only.
+
+  - type: input
+    id: spec-version
+    attributes:
+      label: Spec version
+      description: Which version of LSDP and LSML are you exercising?
+      placeholder: "LSDP/1.0, LSML 1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - LSDP-1 spec text (spec/LSDP-1.md)
+        - LSML-1 spec text (spec/LSML-1.md)
+        - JSON Schema (spec/schema.json)
+        - Conformance fixture (conformance/v1/fixtures/)
+        - Conformance scenario (conformance/v1/scenarios/)
+        - Error code taxonomy (spec/ERROR-CODES.md)
+        - Performance budget (spec/PERFORMANCE.md)
+        - Runtime API contract (spec/RUNTIME-API.md)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What's wrong
+      description: A clear and concise description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should the spec / fixture / schema say or accept ?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: |
+        Steps, code, frames, or bundles that demonstrate the issue.
+        For schema bugs, include the bundle that triggers the wrong validation result.
+        For conformance bugs, point at the scenario / fixture file.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Anything else that helps — links to related issues, screenshots, references to other systems.

@@ -1,0 +1,76 @@
+name: RFC — protocol or schema change
+description: Propose a change to LSDP, LSML, the error taxonomy, conformance, or another normative document.
+title: "[RFC] "
+labels: ["rfc:proposed"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        RFCs gate normative changes — anything that affects the wire protocol, scene format, error taxonomy, or conformance semantics goes through this process. Read [RFC-PROCESS.md](../blob/main/RFC-PROCESS.md) before filing.
+
+        Discussion period is **at least 14 days** after posting.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One paragraph stating the change.
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: |
+        What is the problem ? Who is affected ? Real examples preferred over hypotheticals.
+        Link to the production scenario or implementation pain that triggered this RFC.
+    validations:
+      required: true
+
+  - type: textarea
+    id: design
+    attributes:
+      label: Detailed design
+      description: |
+        The proposed change in full. Include :
+        - Spec text (markdown excerpts) of additions / deletions / replacements
+        - Conformance fixture or scenario deltas
+        - Wire-format examples
+        - Migration path for existing implementations
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What else was on the table ? Why was this proposal preferred ?
+    validations:
+      required: true
+
+  - type: textarea
+    id: drawbacks
+    attributes:
+      label: Drawbacks & cost
+      description: What's the cost ? Who pays it ? Be honest about trade-offs.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: compat
+    attributes:
+      label: Compatibility impact
+      multiple: false
+      options:
+        - Backward-compatible (minor version bump — LSDP/1.0 → 1.1, LSML 1.0 → 1.1)
+        - Breaking (major version bump — LSDP/2, LSML 2.0)
+        - Unclear / needs discussion
+    validations:
+      required: true
+
+  - type: textarea
+    id: open
+    attributes:
+      label: Unresolved questions
+      description: What's still open ? What needs more discussion before this can be accepted ?
