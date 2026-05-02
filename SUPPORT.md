@@ -8,10 +8,10 @@ Open an issue in **that SDK's repo** :
 
 | SDK | Repo |
 |---|---|
-| TypeScript runtime + Node server | [`lumencast-js`](../lumencast-js) |
-| Go server + CLI | [`lumencast-go`](../lumencast-go) |
-| Rust SDK | [`lumencast-rs`](../lumencast-rs) |
-| Python SDK | [`lumencast-py`](../lumencast-py) |
+| TypeScript runtime + Node server | [`lumencast-js`](https://github.com/Lumencast/lumencast-js) |
+| Go server + CLI | [`lumencast-go`](https://github.com/Lumencast/lumencast-go) |
+| Rust SDK | [`lumencast-rs`](https://github.com/Lumencast/lumencast-rs) |
+| Python SDK | [`lumencast-py`](https://github.com/Lumencast/lumencast-py) |
 
 Bugs in the JS runtime go to `lumencast-js`, not here.
 
