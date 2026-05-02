@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumencast.dev/schema/lsml/1.0/schema.json",
+  "title": "LSML 1.0 — Lumencast Scene Markup Language",
+  "description": "Canonical machine-readable JSON Schema for LSML 1.0 scene bundles. Status: skeleton. The full schema is filled in iteratively as conformance fixtures are written. The normative spec lives in spec/LSML-1.md.",
+  "type": "object",
+  "required": ["lsml", "scene_id", "scene_version", "layout"],
+  "properties": {
+    "lsml": {
+      "type": "string",
+      "description": "Schema version. MUST be '1.0' for this revision.",
+      "const": "1.0"
+    },
+    "scene_id": {
+      "type": "string",
+      "description": "Stable identifier for the scene.",
+      "minLength": 1
+    },
+    "scene_version": {
+      "type": "string",
+      "description": "Content hash of the canonicalized bundle.",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "layout": {
+      "$ref": "#/$defs/PrimitiveNode"
+    },
+    "operator_inputs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/OperatorInput" }
+    },
+    "external_adapters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/AdapterDecl" }
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "assets": {
+      "type": "object",
+      "properties": {
+        "allowedHosts": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "fonts": { "type": "array" },
+        "preload": { "type": "array" }
+      }
+    },
+    "i18n": {
+      "type": "object",
+      "properties": {
+        "default_locale": { "type": "string" },
+        "locales": { "type": "object" }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "PrimitiveNode": {
+      "description": "Skeleton — to be elaborated. See spec/LSML-1.md § 4 for the canonical primitive catalogue.",
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["stack", "grid", "frame", "text", "image", "shape", "media", "repeat"]
+        }
+      }
+    },
+    "OperatorInput": {
+      "description": "Skeleton — see spec/LSML-1.md § 8.",
+      "type": "object",
+      "required": ["path", "label", "type", "writable_by"],
+      "properties": {
+        "path": { "type": "string" },
+        "label": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["string", "number", "boolean", "enum", "color", "date", "time", "path-ref", "image-ref"]
+        },
+        "constraints": { "type": "object" },
+        "writable_by": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["operator", "service"] }
+        },
+        "group": { "type": "string" },
+        "values": { "type": "array" }
+      }
+    },
+    "AdapterDecl": {
+      "description": "Skeleton — see spec/LSML-1.md § 9.",
+      "type": "object",
+      "required": ["kind", "writes_to"],
+      "properties": {
+        "kind": { "type": "string" },
+        "writes_to": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  }
+}
