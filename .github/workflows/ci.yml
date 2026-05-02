@@ -47,6 +47,20 @@ jobs:
           done < <(find . -type f -name '*.json' -not -path './node_modules/*' -print0)
           exit "$fail"
 
+  schema-validate-examples:
+    name: LSML examples validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install jsonschema
+        run: pip install --upgrade pip jsonschema
+      - name: Validate spec/examples/*.lsml.json against spec/schema.json
+        run: python scripts/validate-bundle.py spec/examples/*.lsml.json
+
   link-check:
     name: Internal link check
     runs-on: ubuntu-latest

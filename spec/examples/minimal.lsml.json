@@ -1,0 +1,20 @@
+{
+  "lsml": "1.0",
+  "scene_id": "minimal",
+  "scene_version": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "layout": {
+    "kind": "frame",
+    "size": { "w": 1920, "h": 1080 },
+    "background": "#000000",
+    "children": [
+      {
+        "kind": "text",
+        "bind": { "value": "title" },
+        "style": { "fontSize": 48, "color": "#ffffff", "textAlign": "center" }
+      }
+    ]
+  },
+  "defaults": {
+    "title": "Hello, Lumencast"
+  }
+}
