@@ -154,6 +154,106 @@ Set the test clock to a specific point. Used for time-sensitive scenarios. Imple
   to_ms: 5000
 ```
 
+### `client-action`
+
+Instruct the runtime under test to perform an action. Distinct from `expect-client-action` (which **verifies** an action), this **drives** one. Used for scenarios that exercise the runtime's API surface beyond what frame exchange covers.
+
+```yaml
+- kind: client-action
+  action: setToken
+  token: $TOKEN_OPERATOR_ROTATED
+```
+
+Defined actions :
+
+| `action` | Meaning | Additional fields |
+|---|---|---|
+| `setToken` | Call `handle.setToken(token)` on the runtime | `token` |
+| `disconnect` | Call `handle.disconnect()` | (none) |
+
+A scenario that uses `client-action` is `target: runtime` only — the runner has direct access to the runtime's handle.
+
+## Connection routing modifier
+
+Steps may declare which WebSocket they target via the `on_connection` field. Used by scenarios involving multiple concurrent connections (token rotation).
+
+```yaml
+- kind: client-sends
+  on_connection: new       # the most recently opened connection
+  frame:
+    v: 1
+    type: subscribe
+    token: $TOKEN_OPERATOR_ROTATED
+```
+
+| Value | Meaning |
+|---|---|
+| `original` | The first connection opened in the scenario (default) |
+| `new` | The most recently opened connection |
+| `<id>` | A named connection if the scenario declares multiple |
+
+When unspecified, steps target `original`. A scenario that opens multiple connections (e.g. token rotation produces a second WebSocket before closing the first) MUST tag the steps that go to the new connection.
+
+## Bundle declarations
+
+Scenarios that exercise scene loading reference test bundles. Two forms :
+
+### Inline bundle
+
+Embed the LSML bundle directly in the scenario YAML. Useful for small, self-contained scenarios.
+
+```yaml
+bundles:
+  - id: title-bundle
+    inline:
+      lsml: "1.0"
+      scene_id: t
+      scene_version: sha256:0000...
+      layout:
+        kind: text
+        bind: { value: "__inputs.title" }
+      operator_inputs:
+        - path: "__inputs.title"
+          label: Title
+          type: string
+          writable_by: [operator]
+      defaults:
+        "__inputs.title": ""
+```
+
+### File-referenced bundle
+
+Reference a bundle stored under `conformance/v1/bundles/`. Useful for shared bundles used across multiple scenarios.
+
+```yaml
+bundles:
+  - id: minimal-scoreboard
+    path: ../bundles/minimal-scoreboard.lsml.json
+```
+
+### Resolution
+
+`$BUNDLE.<id>.hash` resolves to the sha256 of the named bundle. The runner pre-computes hashes by canonicalizing the bundle JSON per LSML 1.0 § 3 (sort keys, no insignificant whitespace, scene_version field set to all-zeros for hashing then replaced).
+
+## Verification semantics
+
+`expect-runtime-state` and `expect-server-state` perform a **subset-match** comparison by default :
+
+- Every path/value listed in the expected state MUST be present in the actual state.
+- Extra paths in the actual state are ignored (e.g. `__system.*` paths the server adds automatically).
+- Order doesn't matter (dictionary semantics).
+
+For scenarios that need to verify *cleanup* (e.g. old paths are gone after a `scene_changed`), set `mode: exact` :
+
+```yaml
+- kind: expect-runtime-state
+  mode: exact          # default: subset
+  state:
+    b: 100
+```
+
+In `mode: exact`, the actual state MUST NOT contain any path beyond those listed.
+
 ## Tokens & roles
 
 Scenarios commonly need tokens with specific roles. The runner provides standard tokens by default :
