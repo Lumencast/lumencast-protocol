@@ -22,3 +22,10 @@
 # Workflows — maintainer only
 /.github/workflows/         @ClodoCapeo
 /.github/CODEOWNERS         @ClodoCapeo
+
+# Issue / PR templates — maintainer only
+/.github/ISSUE_TEMPLATE/    @ClodoCapeo
+/.github/PULL_REQUEST_TEMPLATE.md @ClodoCapeo
+
+# Support entrypoint — maintainer only
+/SUPPORT.md                 @ClodoCapeo

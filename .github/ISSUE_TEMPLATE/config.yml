@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Lumencast/lumencast-protocol/security/policy
+    about: Report security issues privately. DO NOT file a public issue.
+  - name: Question
+    url: https://github.com/Lumencast/lumencast-protocol/discussions
+    about: Ask a usage question or start a design discussion.
