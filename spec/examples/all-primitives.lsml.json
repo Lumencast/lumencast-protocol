@@ -1,0 +1,200 @@
+{
+  "lsml": "1.0",
+  "scene_id": "all-primitives-demo",
+  "scene_version": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "metadata": {
+    "author": "Lumencast",
+    "description": "Reference bundle exercising every LSML 1.0 primitive plus operator_inputs, external_adapters, i18n, and assets. Used for schema validation testing.",
+    "tags": ["reference", "test"]
+  },
+  "layout": {
+    "kind": "frame",
+    "size": { "w": 1920, "h": 1080 },
+    "background": "#0b1020",
+    "children": [
+      {
+        "kind": "stack",
+        "direction": "vertical",
+        "gap": 24,
+        "padding": [40, 40, 40, 40],
+        "align": "stretch",
+        "children": [
+          {
+            "kind": "text",
+            "bind": { "value": "i18n.title" },
+            "style": {
+              "fontSize": 64,
+              "fontWeight": 700,
+              "color": "#ffffff",
+              "textAlign": "center"
+            },
+            "role": "heading",
+            "animate": {
+              "transition": { "duration": 250, "easing": "spring", "stiffness": 200, "damping": 22 },
+              "opacity": 1,
+              "transform": { "translate": [0, 0], "scale": 1 }
+            }
+          },
+          {
+            "kind": "grid",
+            "columns": 2,
+            "gap": [16, 32],
+            "children": [
+              {
+                "kind": "image",
+                "bind": { "src": "team.home.logo_url" },
+                "alt": "Home team logo",
+                "size": { "w": 200, "h": 200 },
+                "fit": "contain"
+              },
+              {
+                "kind": "image",
+                "bind": { "src": "team.away.logo_url" },
+                "alt": "Away team logo",
+                "size": { "w": 200, "h": 200 },
+                "fit": "contain"
+              }
+            ]
+          },
+          {
+            "kind": "shape",
+            "geometry": "rect",
+            "size": { "w": 800, "h": 8 },
+            "fill": "#3b82f6",
+            "cornerRadius": 4
+          },
+          {
+            "kind": "shape",
+            "geometry": "circle",
+            "size": { "w": 64, "h": 64 },
+            "fill": "#ef4444",
+            "ariaLabel": "Live indicator"
+          },
+          {
+            "kind": "shape",
+            "geometry": "path",
+            "pathData": "M 10 10 L 100 10 L 55 90 Z",
+            "fill": "#22c55e"
+          },
+          {
+            "kind": "media",
+            "kind_hint": "video",
+            "bind": { "src": "show.intro_video_url" },
+            "size": { "w": 1280, "h": 720 },
+            "controls": false,
+            "autoplay": true,
+            "muted": true,
+            "loop": true,
+            "ariaLabel": "Show introduction video"
+          },
+          {
+            "kind": "repeat",
+            "bind": { "items": "players" },
+            "scope": "player",
+            "key": "{player}.id",
+            "limit": 10,
+            "template": {
+              "kind": "stack",
+              "direction": "horizontal",
+              "gap": 12,
+              "align": "center",
+              "children": [
+                {
+                  "kind": "text",
+                  "bind": { "value": "{player}.name" },
+                  "style": { "fontSize": 28, "color": "#e5e7eb" }
+                },
+                {
+                  "kind": "text",
+                  "bind": { "value": "{player}.score" },
+                  "format": { "kind": "number" },
+                  "style": { "fontSize": 28, "fontWeight": "bold", "color": "#ffffff" }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "operator_inputs": [
+    {
+      "path": "__inputs.title",
+      "label": "Show title",
+      "type": "string",
+      "constraints": { "maxLength": 80 },
+      "writable_by": ["operator"],
+      "group": "header",
+      "default": ""
+    },
+    {
+      "path": "__inputs.color_theme",
+      "label": "Theme",
+      "type": "enum",
+      "values": ["dark", "light", "high-contrast"],
+      "writable_by": ["operator"],
+      "default": "dark"
+    },
+    {
+      "path": "__inputs.show_visible",
+      "label": "Show overlay",
+      "type": "boolean",
+      "writable_by": ["operator"],
+      "default": true
+    },
+    {
+      "path": "__inputs.brand_color",
+      "label": "Brand color",
+      "type": "color",
+      "writable_by": ["operator"]
+    },
+    {
+      "path": "__inputs.live_score_home",
+      "label": "Home score",
+      "type": "number",
+      "constraints": { "min": 0, "max": 999, "step": 1 },
+      "writable_by": ["operator", "service"]
+    }
+  ],
+  "external_adapters": [
+    {
+      "kind": "http_poll",
+      "interval_ms": 200,
+      "url": "https://api.example.com/match/scores",
+      "writes_to": "__inputs.live_score_home"
+    },
+    {
+      "kind": "websocket_subscribe",
+      "url": "wss://feeds.example.com/match",
+      "writes_to": "players"
+    }
+  ],
+  "defaults": {
+    "title": "",
+    "team.home.logo_url": "https://cdn.example.com/teams/home.png",
+    "team.away.logo_url": "https://cdn.example.com/teams/away.png",
+    "show.intro_video_url": "https://cdn.example.com/intro.mp4",
+    "players": []
+  },
+  "assets": {
+    "allowedHosts": ["cdn.example.com", "static.example.com"],
+    "fonts": [
+      {
+        "family": "Inter",
+        "url": "https://cdn.example.com/fonts/inter.woff2",
+        "sha256": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+        "weight": 700,
+        "style": "normal"
+      }
+    ],
+    "preload": ["https://cdn.example.com/teams/home.png", "https://cdn.example.com/teams/away.png"]
+  },
+  "i18n": {
+    "default_locale": "en-US",
+    "locales": {
+      "en-US": { "i18n.title": "Live Match" },
+      "fr-FR": { "i18n.title": "Match en direct" },
+      "ar-AE": { "i18n.title": "المباراة المباشرة" }
+    }
+  }
+}
