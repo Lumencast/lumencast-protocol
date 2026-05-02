@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "spec": {
+    "lsdp": "1",
+    "lsml": "1.0"
+  },
+  "comment": "Placeholder manifest. Scenarios and fixtures land iteratively.",
+  "scenarios": [],
+  "fixtures": []
+}

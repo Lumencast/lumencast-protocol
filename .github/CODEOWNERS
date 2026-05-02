@@ -1,0 +1,24 @@
+# Lumencast — protocol & schema codeowners
+#
+# Spec changes (LSDP, LSML, error taxonomy, conformance) require
+# maintainer review without exception. The protocol is the source of
+# truth for the entire ecosystem ; an unreviewed merge here propagates
+# to every SDK and runtime downstream.
+
+# Default — every file
+*                           @ClodoCapeo
+
+# Spec — most sensitive
+/spec/                      @ClodoCapeo
+/conformance/               @ClodoCapeo
+
+# Governance — maintainer only
+/GOVERNANCE.md              @ClodoCapeo
+/CODE_OF_CONDUCT.md         @ClodoCapeo
+/SECURITY.md                @ClodoCapeo
+/LICENSE                    @ClodoCapeo
+/NOTICE                     @ClodoCapeo
+
+# Workflows — maintainer only
+/.github/workflows/         @ClodoCapeo
+/.github/CODEOWNERS         @ClodoCapeo
