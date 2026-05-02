@@ -10,28 +10,50 @@ For Lumencast to be a real standard, multiple implementations (TypeScript, Go, R
 
 ```
 conformance/
-├── v1/                              # LSDP/1 + LSML 1.0
-│   ├── fixtures/                    # Byte-level golden fixtures
-│   │   ├── envelope/
-│   │   │   ├── snapshot-basic.json
-│   │   │   ├── delta-single-patch.json
-│   │   │   └── ...
-│   │   └── lsml/
-│   │       ├── minimal.json
-│   │       ├── all-primitives.json
-│   │       └── ...
-│   ├── scenarios/                   # End-to-end protocol scenarios
-│   │   ├── subscribe-snapshot-delta.yaml
-│   │   ├── reconnect-after-gap.yaml
-│   │   ├── token-rotation.yaml
-│   │   ├── scene-changed-resets-seq.yaml
-│   │   ├── viewer-cannot-input.yaml
-│   │   ├── operator-input-validates.yaml
-│   │   ├── test-session-namespace.yaml
-│   │   └── ...
-│   └── manifest.json                # Catalogue + expected outcomes
-└── README.md                        # this file
+├── manifest.json                    # Indexed catalogue of fixtures + scenarios
+├── README.md                        # this file
+└── v1/                              # LSDP/1 + LSML 1.0
+    ├── SCENARIO-FORMAT.md           # Authoritative scenario YAML format
+    ├── fixtures/                    # Byte-level golden frames
+    │   ├── client/                  # Client → server frames
+    │   │   ├── subscribe-minimal.json
+    │   │   ├── subscribe-with-scene-and-session.json
+    │   │   ├── input-single-patch.json
+    │   │   ├── input-multiple-patches.json
+    │   │   └── ping.json
+    │   └── server/                  # Server → client frames
+    │       ├── snapshot-empty.json
+    │       ├── snapshot-with-state.json
+    │       ├── delta-single-patch.json
+    │       ├── delta-multiple-patches.json
+    │       ├── scene-changed.json
+    │       ├── error-auth-denied.json
+    │       ├── error-write-forbidden.json
+    │       ├── error-unknown-path.json
+    │       ├── error-rate-limit.json
+    │       └── pong.json
+    └── scenarios/                   # End-to-end protocol behaviours
+        ├── subscribe-snapshot-delta.yaml
+        ├── delta-multiple-patches-atomic.yaml
+        ├── delta-replay-tolerated.yaml
+        ├── seq-gap-triggers-reconnect.yaml
+        ├── seq-resets-on-scene-changed.yaml
+        ├── auth-denied-closes.yaml
+        ├── viewer-cannot-input.yaml
+        ├── operator-input-echoes-as-delta.yaml
+        ├── unknown-path-rejected.yaml
+        ├── invalid-value-rejected.yaml
+        ├── test-session-namespace.yaml
+        ├── bundle-incompatible-rejects.yaml
+        ├── token-rotation-no-flicker.yaml
+        ├── ping-pong-roundtrip.yaml
+        ├── envelope-rejects-future-major.yaml
+        └── unknown-frame-type-ignored.yaml
 ```
+
+The `manifest.json` indexes everything with tags (`required` / `recommended` / `extended`) and target type (`server` / `runtime` / `any`).
+
+The `SCENARIO-FORMAT.md` is the **normative format spec** — the YAML structure of a scenario, the step kinds, the matching semantics, the placeholder vocabulary. Every conformance runner implements this format identically.
 
 ## Fixture format
 
@@ -40,7 +62,9 @@ A **byte-level fixture** is a JSON file representing a single LSDP frame as it w
 - Decodes back
 - Compares to the original (round-trip)
 
-Example `fixtures/envelope/snapshot-basic.json` :
+Fixtures live in `v1/fixtures/<direction>/<frame-type-or-variant>.json` where direction is `client` (client → server) or `server` (server → client).
+
+Example `v1/fixtures/server/snapshot-with-state.json` :
 
 ```json
 {
@@ -58,7 +82,7 @@ Example `fixtures/envelope/snapshot-basic.json` :
 
 ## Scenario format
 
-A **scenario** is a YAML file describing a sequence of frames exchanged between client and server, plus expected outcomes :
+A **scenario** is a YAML file describing a sequence of frames exchanged between client and server, plus expected outcomes. The full normative format lives in [`v1/SCENARIO-FORMAT.md`](v1/SCENARIO-FORMAT.md). Brief example :
 
 ```yaml
 name: reconnect-after-gap
