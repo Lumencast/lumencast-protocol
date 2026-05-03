@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumencast.dev/schema/lsdp/1/schema-frames.json",
+  "title": "LSDP/1 — frame envelope and per-type schemas",
+  "description": "Mechanical companion to spec/LSDP-1.md. Validates every wire frame, server-to-client and client-to-server. Each frame is one JSON text WebSocket message.",
+
+  "$defs": {
+    "LeafPath": {
+      "type": "string",
+      "description": "LSDP/1 §16 LeafPath grammar — RegularPath / ScopedPath / ReservedPath.",
+      "pattern": "^(?:[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z0-9_]+)*|\\{[A-Za-z_][A-Za-z0-9_]*\\}(?:\\.[A-Za-z0-9_]+)*|__[a-z]+(?:\\.[A-Za-z0-9_*-]+)+)$",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "SceneId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "SceneVersion": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "Sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "LSDP/1 §5 monotonic sequence number. Server frames carry it ; pong does not."
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC (RFC 3339 profile). Optional on every server frame."
+    },
+    "ErrorCode": {
+      "type": "string",
+      "enum": [
+        "AUTH_DENIED",
+        "WRITE_FORBIDDEN",
+        "SCENE_NOT_FOUND",
+        "BUNDLE_FETCH_FAILED",
+        "BUNDLE_INCOMPATIBLE",
+        "VERSION_GAP",
+        "VERSION_MISMATCH",
+        "UNKNOWN_PATH",
+        "INVALID_VALUE",
+        "RATE_LIMIT",
+        "TEST_SESSION_EXPIRED",
+        "INTERNAL"
+      ],
+      "description": "Closed taxonomy from spec/ERROR-CODES.md. Adding a code requires a minor version bump."
+    },
+    "PathScopedErrorCode": {
+      "type": "string",
+      "enum": ["WRITE_FORBIDDEN", "UNKNOWN_PATH", "INVALID_VALUE"],
+      "description": "Subset of ErrorCode for which `path` is REQUIRED."
+    },
+    "LeafValue": {
+      "description": "LSDP/1 §3.2.1 allowed value type. Objects are forbidden ; arrays may nest LeafValue recursively.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "null" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/LeafValue" }
+        }
+      ]
+    },
+    "Patch": {
+      "type": "object",
+      "required": ["path", "value"],
+      "properties": {
+        "path": { "$ref": "#/$defs/LeafPath" },
+        "value": { "$ref": "#/$defs/LeafValue" }
+      },
+      "additionalProperties": false
+    },
+    "BaseEnvelope": {
+      "type": "object",
+      "required": ["v", "type"],
+      "properties": {
+        "v": {
+          "type": "integer",
+          "const": 1,
+          "description": "Major version. MUST be 1 for LSDP/1."
+        },
+        "type": { "type": "string" },
+        "seq": { "$ref": "#/$defs/Sequence" },
+        "ts": { "$ref": "#/$defs/Timestamp" }
+      }
+    },
+
+    "SnapshotFrame": {
+      "type": "object",
+      "required": ["v", "type", "seq", "scene_id", "scene_version", "state"],
+      "properties": {
+        "v": { "type": "integer", "const": 1 },
+        "type": { "type": "string", "const": "snapshot" },
+        "seq": { "$ref": "#/$defs/Sequence" },
+        "ts": { "$ref": "#/$defs/Timestamp" },
+        "scene_id": { "$ref": "#/$defs/SceneId" },
+        "scene_version": { "$ref": "#/$defs/SceneVersion" },
+        "state": {
+          "type": "object",
+          "description": "Flat dictionary of LeafPath → LeafValue. Keys are LeafPaths.",
+          "patternProperties": {
+            "^(?:[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z0-9_]+)*|__[a-z]+(?:\\.[A-Za-z0-9_*-]+)+)$": {
+              "$ref": "#/$defs/LeafValue"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "DeltaFrame": {
+      "type": "object",
+      "required": ["v", "type", "seq", "patches"],
+      "properties": {
+        "v": { "type": "integer", "const": 1 },
+        "type": { "type": "string", "const": "delta" },
+        "seq": { "$ref": "#/$defs/Sequence" },
+        "ts": { "$ref": "#/$defs/Timestamp" },
+        "patches": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/Patch" }
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "SceneChangedFrame": {
+      "type": "object",
+      "required": ["v", "type", "seq", "scene_id", "scene_version"],
+      "properties": {
+        "v": { "type": "integer", "const": 1 },
+        "type": { "type": "string", "const": "scene_changed" },
+        "seq": { "$ref": "#/$defs/Sequence" },
+        "ts": { "$ref": "#/$defs/Timestamp" },
+        "scene_id": { "$ref": "#/$defs/SceneId" },
+        "scene_version": { "$ref": "#/$defs/SceneVersion" }
+      },
+      "additionalProperties": true
+    },
+
+    "ErrorFrame": {
+      "type": "object",
+      "required": ["v", "type", "seq", "code", "message", "recoverable"],
+      "properties": {
+        "v": { "type": "integer", "const": 1 },
+        "type": { "type": "string", "const": "error" },
+        "seq": { "$ref": "#/$defs/Sequence" },
+        "ts": { "$ref": "#/$defs/Timestamp" },
+        "code": { "$ref": "#/$defs/ErrorCode" },
+        "message": { "type": "string", "minLength": 1 },
+        "recoverable": { "type": "boolean" },
+        "path": { "$ref": "#/$defs/LeafPath" },
+        "retry_after_ms": { "type": "integer", "minimum": 0 },
+        "requested_version": { "type": "string" },
+        "supported_version": { "type": "string" },
+        "session": { "type": "string" }
+      },
+      "additionalProperties": true,
+      "allOf": [
+        {
+          "description": "When code is path-scoped, path is REQUIRED.",
+          "if": {
+            "properties": { "code": { "$ref": "#/$defs/PathScopedErrorCode" } }
+          },
+          "then": {
+            "required": ["path"]
+          }
+        }
+      ]
+    },
+
+    "PongFrame": {
+      "type": "object",
+      "required": ["v", "type"],
+      "properties": {
+        "v": { "type": "integer", "const": 1 },
+        "type": { "type": "string", "const": "pong" }
+      },
+      "additionalProperties": true
+    },
+
+    "SubscribeFrame": {
+      "type": "object",
+      "required": ["v", "type", "token"],
+      "properties": {
+        "v": { "type": "integer", "const": 1 },
+        "type": { "type": "string", "const": "subscribe" },
+        "token": { "type": "string", "minLength": 1 },
+        "scene": { "$ref": "#/$defs/SceneId" },
+        "session": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    },
+
+    "InputFrame": {
+      "type": "object",
+      "required": ["v", "type", "patches"],
+      "properties": {
+        "v": { "type": "integer", "const": 1 },
+        "type": { "type": "string", "const": "input" },
+        "patches": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/Patch" }
+        }
+      },
+      "additionalProperties": true
+    },
+
+    "PingFrame": {
+      "type": "object",
+      "required": ["v", "type"],
+      "properties": {
+        "v": { "type": "integer", "const": 1 },
+        "type": { "type": "string", "const": "ping" }
+      },
+      "additionalProperties": true
+    },
+
+    "ServerFrame": {
+      "description": "Any server-to-client LSDP/1 frame. Validators MUST select on `type` after checking `v`.",
+      "oneOf": [
+        { "$ref": "#/$defs/SnapshotFrame" },
+        { "$ref": "#/$defs/DeltaFrame" },
+        { "$ref": "#/$defs/SceneChangedFrame" },
+        { "$ref": "#/$defs/ErrorFrame" },
+        { "$ref": "#/$defs/PongFrame" }
+      ]
+    },
+
+    "ClientFrame": {
+      "description": "Any client-to-server LSDP/1 frame.",
+      "oneOf": [
+        { "$ref": "#/$defs/SubscribeFrame" },
+        { "$ref": "#/$defs/InputFrame" },
+        { "$ref": "#/$defs/PingFrame" }
+      ]
+    }
+  },
+
+  "oneOf": [
+    { "$ref": "#/$defs/ServerFrame" },
+    { "$ref": "#/$defs/ClientFrame" }
+  ]
+}
