@@ -1290,21 +1290,54 @@ LSML bundles SHOULD declare a top-level `$schema` field pointing at the JSON Sch
 }
 ```
 
-The schema URL convention is :
+The **canonical** schema URL convention is :
 
 ```
 https://lumencast.dev/schema/lsml/<major>.<minor>/schema.json
 ```
 
-Editors with JSON Schema support (VS Code, JetBrains IDEs, Vim with `coc-json` or `vim-jsonschema`, Neovim with `nvim-lspconfig` + `vscode-json-languageserver`) auto-resolve `$schema` URLs and provide :
+This URL space is reserved for stable, hosted schema documents. **Until `lumencast.dev` hosts the schema**, the canonical URL serves as the schema's logical identifier (`$id`) but does not resolve to bytes. To enable IDE autocomplete *today*, bundles MAY use the GitHub raw URL as a transport-equivalent fallback :
 
-- structural validation as you type
-- autocompletion of property names and enum values
-- inline documentation hovers (sourced from `description` fields in the schema)
+```
+https://raw.githubusercontent.com/Lumencast/lumencast-protocol/v<release-tag>/spec/schema.json
+```
+
+— or, for floating-on-`main` autocomplete during development :
+
+```
+https://raw.githubusercontent.com/Lumencast/lumencast-protocol/main/spec/schema.json
+```
+
+Both URLs serve byte-identical content as `lumencast.dev/schema/lsml/<v>/schema.json` once hosting is in place. Authors who pin to a release tag (`v1.0.1`, `v1.1`, etc.) get reproducible validation ; floating `main` is convenient for spec contributors but couples the bundle's editor experience to ongoing spec churn.
+
+#### 18.4.1 Editor support
+
+Editors with JSON Schema support auto-resolve `$schema` URLs and provide structural validation, autocomplete of property names and enum values, and inline documentation hovers (sourced from `description` fields in the schema). The following editors are known to work :
+
+- **VS Code** — built-in JSON language service. `$schema` is fetched and cached automatically.
+- **JetBrains IDEs** (IntelliJ, WebStorm, PyCharm, …) — built-in JSON Schema support.
+- **Vim** with `coc-json`, or **Neovim** with `nvim-lspconfig` + `vscode-json-languageserver`.
+- **Sublime Text** with `LSP-json`.
+- **Helix** — built-in via `vscode-json-languageserver`.
+
+For workspaces that need custom schema mapping (e.g. associating `*.lsml` files with the schema regardless of the `$schema` field), VS Code users can configure `settings.json` :
+
+```jsonc
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["*.lsml"],
+      "url": "https://raw.githubusercontent.com/Lumencast/lumencast-protocol/main/spec/schema.json"
+    }
+  ]
+}
+```
+
+#### 18.4.2 Semantics
 
 `$schema` is **informational only** — runtimes MUST ignore it for rendering and validation decisions (the version-of-record is `lsml`, not the URL). A bundle without `$schema` is fully valid ; the field exists purely to enable the editor experience.
 
-The `$schema` field SHOULD be the **first** key in the JSON object (or second, after `$schema`) so file-detection heuristics that read the prefix can recognise the document.
+The `$schema` field SHOULD be the **first** key in the JSON object so file-detection heuristics that read the prefix can recognise the document. `lsml` MUST appear within the first 3 keys.
 
 ### 18.5 Magic-key detection
 
