@@ -1,0 +1,53 @@
+name: bundle-shape-multipath-validates
+description: "LSML 1.1+ A `shape` with `geometry: path` and a `paths[]` array (multi-subpath geometry with per-subpath winding rule) is structurally valid. Validates that `pathData` and `paths` are mutually exclusive (an instance declaring both is rejected, covered in the negative scenario). Schema-level coverage. (LSML 1.1 §4.6)."
+tag: recommended
+target: server
+spec_refs:
+  - LSML-1#46-shape
+
+bundles:
+  - id: multipath-bundle
+    inline:
+      $schema: https://lumencast.dev/schema/lsml/1.1/schema.json
+      lsml: "1.1"
+      scene_id: multipath
+      scene_version: sha256:2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b
+      layout:
+        kind: frame
+        size: { w: 400, h: 400 }
+        background: "#ffffff"
+        children:
+          - kind: shape
+            geometry: path
+            size: { w: 120, h: 120 }
+            paths:
+              - data: "M0,0 L120,0 L120,120 L0,120 Z"
+                windingRule: NONZERO
+              - data: "M30,30 L90,30 L90,90 L30,90 Z"
+                windingRule: EVENODD
+            fills:
+              - kind: solid
+                color: "#ff7e00"
+            ariaLabel: Frame with cutout
+          - kind: shape
+            geometry: path
+            size: { w: 80, h: 80 }
+            paths:
+              - data: "M40,0 L80,40 L40,80 L0,40 Z"
+            fill: "#00aa55"
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: multipath
+      scene_version: $ANY_HASH
+      state: $ANY

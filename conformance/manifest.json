@@ -306,6 +306,35 @@
       ]
     },
     {
+      "id": "bundle-universal-position-validates",
+      "path": "v1/scenarios/bundle-universal-position-validates.yaml",
+      "tag": "recommended",
+      "target": "server",
+      "covers": [
+        "LSML-1#5.4",
+        "LSML-1#4.4",
+        "LSML-1#4.6"
+      ]
+    },
+    {
+      "id": "bundle-shape-multipath-validates",
+      "path": "v1/scenarios/bundle-shape-multipath-validates.yaml",
+      "tag": "recommended",
+      "target": "server",
+      "covers": [
+        "LSML-1#4.6"
+      ]
+    },
+    {
+      "id": "bundle-frame-clipscontent-validates",
+      "path": "v1/scenarios/bundle-frame-clipscontent-validates.yaml",
+      "tag": "recommended",
+      "target": "server",
+      "covers": [
+        "LSML-1#4.3"
+      ]
+    },
+    {
       "id": "bundle-unsupported-profile-rejected",
       "path": "v1/scenarios/bundle-unsupported-profile-rejected.yaml",
       "tag": "required",

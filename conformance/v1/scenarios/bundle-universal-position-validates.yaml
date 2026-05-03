@@ -1,0 +1,61 @@
+name: bundle-universal-position-validates
+description: LSML 1.1+ A bundle declaring `position` on non-frame primitives (text, shape, image) is structurally valid. Position becomes a universal prop in 1.1+, honoured when the parent is a frame in absolute mode. Schema-level coverage. (LSML 1.1 §5.4, §4.4, §4.6).
+tag: recommended
+target: server
+spec_refs:
+  - LSML-1#54-universal-props-11
+  - LSML-1#43-frame
+  - LSML-1#44-text
+  - LSML-1#46-shape
+
+bundles:
+  - id: position-bundle
+    inline:
+      $schema: https://lumencast.dev/schema/lsml/1.1/schema.json
+      lsml: "1.1"
+      scene_id: position-test
+      scene_version: sha256:1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a
+      layout:
+        kind: frame
+        size: { w: 1920, h: 1080 }
+        background: "#0d0d1a"
+        children:
+          - kind: text
+            bind: { value: title }
+            position: { x: 80, y: 60 }
+            style:
+              fontSize: 48
+              fontWeight: 700
+              color: "#ffffff"
+              textTransform: uppercase
+          - kind: shape
+            geometry: rect
+            size: { w: 600, h: 400 }
+            position: { x: 660, y: 340 }
+            cornerRadius: 24
+            fill: "#ff7e00"
+          - kind: image
+            bind: { src: hero.image }
+            alt: Hero artwork
+            size: { w: 320, h: 320 }
+            position: { x: 1500, y: 720 }
+            fit: contain
+      defaults:
+        title: "On Demand vs Formalized"
+        hero.image: "https://example.com/hero.png"
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: position-test
+      scene_version: $ANY_HASH
+      state: $ANY

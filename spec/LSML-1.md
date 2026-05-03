@@ -214,7 +214,8 @@ An absolutely-positioned container with explicit dimensions. Used as the root of
 | Prop | Type | Required | Default | Description |
 |---|---|---|---|---|
 | `size` | `{ w: number, h: number }` | conditional | — | Required for the root frame. Optional for nested. |
-| `position` | `{ x: number, y: number }` | no | `{0,0}` | Position relative to parent. |
+| `position` | `{ x: number, y: number }` | no | `{0,0}` | Position relative to parent. Universal prop in 1.1+ (see §5.4) ; the duplicate row here is kept for back-compat with 1.0/1.1.0 frame definitions. |
+| `clipsContent` | boolean | no | `true` | (1.1+) When `true` (default), children outside the frame's `size` are clipped. When `false`, children may render past the frame boundary ; the frame does not auto-grow. |
 | `background` | string (CSS color) | no | transparent | Single solid background fill. Mutually exclusive with `backgrounds`. |
 | `backgrounds` | array of [Fill](#412-fill-spec) | no | — | (1.1+) Stacked backgrounds, top-to-bottom (the first entry renders on top). Mutually exclusive with `background`. Supports solid colors, linear gradients, radial gradients. |
 | `children` | array of PrimitiveNode | yes | — | Children, stacked in z-order. |
@@ -247,6 +248,22 @@ Renders a string of text.
 | `maxLines` | integer | no | Truncation with ellipsis after N lines. |
 
 The runtime resolves `bind.value` against the store. If the value is not a string, it is coerced to its JSON string representation **unless** `format` specifies otherwise.
+
+#### 4.4.1 Round-tripping case-transformed text from authoring tools (1.1+)
+
+Figma's `textCase`, Sketch's `textTransform`, and CSS `text-transform` all describe the same concept : the literal `characters` are stored as authored, and the renderer applies the case transform at paint time. LSML's `TextStyle.textTransform` (already in 1.1) is the canonical home for this.
+
+Authoring tools SHOULD map their native case-transform field to `style.textTransform` :
+
+| Source | LSML `style.textTransform` |
+|---|---|
+| Figma `UPPER`, Sketch `uppercase`, CSS `uppercase` | `"uppercase"` |
+| Figma `LOWER`, Sketch `lowercase`, CSS `lowercase` | `"lowercase"` |
+| Figma `TITLE`, Sketch `capitalize`, CSS `capitalize` | `"capitalize"` |
+| Figma `ORIGINAL`, CSS `none` | omit the field |
+| Figma `SMALL_CAPS`, `SMALL_CAPS_FORCED` | not representable — keep in `metadata.<vendor>` until the spec adds an enum value |
+
+Authoring tools MUST NOT pre-transform the literal `characters` (e.g. uppercase the string at export) because that loses the information needed for case-aware locales (Turkish dotted/dotless `i`, German `ß` ↔ `SS`). Tools SHOULD NOT use `metadata.*` for the standard three cases — that makes the bundle non-portable across runtimes that already honour `textTransform`.
 
 ### 4.5 `image`
 
@@ -306,11 +323,26 @@ Renders a primitive geometric shape via SVG.
 }
 ```
 
+```json
+{
+  "kind": "shape",
+  "geometry": "path",
+  "size": { "w": 120, "h": 80 },
+  "paths": [
+    { "data": "M0,0 L120,0 L120,80 L0,80 Z", "windingRule": "NONZERO" },
+    { "data": "M30,20 L90,20 L90,60 L30,60 Z", "windingRule": "EVENODD" }
+  ],
+  "fills": [{ "kind": "solid", "color": "#ff7e00" }],
+  "ariaLabel": "Frame with cutout"
+}
+```
+
 | Prop | Type | Required | Description |
 |---|---|---|---|
 | `geometry` | `"rect"` \| `"circle"` \| `"path"` | yes | Shape kind. |
-| `size` | `{ w, h }` | conditional | Required for `rect`/`circle`. |
-| `pathData` | string | conditional | Required for `path`, SVG path data syntax. |
+| `size` | `{ w, h }` | conditional | Required for `rect`/`circle`. Recommended for `path` so renderers can compute a viewBox without parsing every subpath. |
+| `pathData` | string | conditional | Single-path shorthand. Required for `path` when `paths` is absent. SVG path `d` attribute syntax. Equivalent to `paths: [{ data: <pathData>, windingRule: "NONZERO" }]`. Mutually exclusive with `paths`. |
+| `paths` | array of `{ data: string, windingRule?: "NONZERO" \| "EVENODD" }` | conditional | (1.1+) Multi-subpath geometry. Required for `path` when `pathData` is absent. Each entry is an SVG path with its own winding rule (default `"NONZERO"`). Fills and strokes apply to the union of all subpaths. Use this form for `BooleanOperation`-style flattened geometry from authoring tools. Mutually exclusive with `pathData`. |
 | `fill` | CSS color | no | Single solid fill. Mutually exclusive with `fills`. |
 | `fills` | array of [Fill](#412-fill-spec) | no | (1.1+) Stacked fills, top-to-bottom (the first entry renders on top). Mutually exclusive with `fill`. Supports solid colors, linear gradients, radial gradients. |
 | `stroke` | `{ color, width }` | no | Single stroke. Mutually exclusive with `strokes`. |
@@ -548,12 +580,13 @@ In this example, `value` is dynamic, `fontSize` is static, and `color` is dynami
 
 ### 5.4 Universal props (1.1+)
 
-Four props apply to **every** primitive in the catalog (§4.1–4.9), regardless of `kind`. They control rendering attributes that are universal across visual types.
+Five props apply to **every** primitive in the catalog (§4.1–4.9), regardless of `kind`. They control rendering attributes that are universal across visual types.
 
 ```json
 {
   "kind": "text",
   "bind": { "value": "score" },
+  "position": { "x": 320, "y": 80 },
   "visible": true,
   "sizing": { "x": "fill", "y": "hug" },
   "opacity": 0.9,
@@ -563,6 +596,7 @@ Four props apply to **every** primitive in the catalog (§4.1–4.9), regardless
 
 | Prop | Type | Default | Description |
 |---|---|---|---|
+| `position` | `{ x: number, y: number }` | `{0,0}` | (1.1+) Absolute position relative to the parent's coordinate origin. Honoured when the parent is a `frame` (absolute layout) or any container in absolute mode. Ignored by `stack` and `grid` parents — those layouts own child placement. The `frame` and `image` primitives also document a per-primitive `position` (§4.3, §4.5) for back-compat ; semantics are identical. |
 | `visible` | boolean | `true` | When `false`, the primitive (and its subtree, if any) is not rendered. The slot collapses in flex layouts. |
 | `sizing` | `{ x: SizingMode, y: SizingMode }` | `{ "fixed", "fixed" }` | Auto-layout sizing intent per axis when the primitive lives inside a flex container (`stack` or `frame` with auto-layout). |
 | `opacity` | number 0..1 | `1` | Composite alpha. Applied multiplicatively with `animate.opacity` if both are present. |
@@ -600,6 +634,8 @@ Four props apply to **every** primitive in the catalog (§4.1–4.9), regardless
 `bindUniversal` mirrors `bindStyle` (§5.2) — keys are universal-prop names, values are LeafPaths. The runtime resolves the path against the store and re-renders on change. Static and bound forms are mutually exclusive per key.
 
 `sizing` is NOT bindable in 1.1 (auto-layout depends on it for first-paint ; reactive sizing introduces layout thrash). A future minor MAY add it after profiling.
+
+`position` is also NOT bindable in 1.1.x. Reactive absolute position is real (animating a sticker) but better expressed via `animate.transform.translate` (§6.1), which already supports binding. Adding `bindUniversal.position` would create two ways to do the same thing.
 
 ## 6. Animate directives
 
