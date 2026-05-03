@@ -1,0 +1,7 @@
+{
+  "$TOKEN_OPERATOR": "interop-tok-operator-7f3a",
+  "$TOKEN_VIEWER":   "interop-tok-viewer-7f3a",
+  "$TOKEN_SERVICE":  "interop-tok-service-7f3a",
+  "$TOKEN_TEST":     "interop-tok-test-7f3a",
+  "$TOKEN_INVALID":  "interop-tok-invalid-7f3a"
+}
