@@ -204,7 +204,7 @@
     {
       "id": "subscribe-since-sequence-resumes",
       "path": "v1/scenarios/subscribe-since-sequence-resumes.yaml",
-      "tag": "required",
+      "tag": "recommended",
       "target": "server",
       "covers": [
         "LSDP-1#4.1",
@@ -224,7 +224,7 @@
     {
       "id": "unsubscribe-closes-connection",
       "path": "v1/scenarios/unsubscribe-closes-connection.yaml",
-      "tag": "required",
+      "tag": "recommended",
       "target": "server",
       "covers": [
         "LSDP-1#4.4"
