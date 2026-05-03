@@ -1,0 +1,61 @@
+name: input-client-msg-id-echoed-in-cause
+description: 1.1+ When a client `input` carries `client_msg_id`, the server MUST echo that value verbatim in `cause.input_id` of the resulting delta. Enables optimistic-UI correlation. (LSDP/1.1 §4.2, §3.2.3).
+tag: required
+target: server
+spec_refs:
+  - LSDP-1#42-input
+  - LSDP-1#323-provenance-cause-11
+
+bundles:
+  - id: title-bundle
+    inline:
+      lsml: "1.0"
+      scene_id: t
+      scene_version: sha256:c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1
+      layout:
+        kind: text
+        bind: { value: "__inputs.title" }
+      operator_inputs:
+        - path: "__inputs.title"
+          label: Title
+          type: string
+          writable_by: [operator]
+      defaults:
+        "__inputs.title": ""
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: t
+      scene_version: $ANY_HASH
+      state:
+        "__inputs.title": ""
+
+  - kind: client-sends
+    frame:
+      v: 1
+      type: input
+      client_msg_id: ui-9f3a
+      patches:
+        - { path: "__inputs.title", value: "Hello" }
+
+  # Server's resulting delta carries cause.input_id matching the client_msg_id.
+  - kind: server-sends
+    frame:
+      v: 1
+      type: delta
+      seq: 2
+      patches:
+        - { path: "__inputs.title", value: "Hello" }
+      cause:
+        source: $ANY
+        input_id: ui-9f3a

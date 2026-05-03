@@ -1,0 +1,56 @@
+name: bundle-universal-props-validates
+description: LSML 1.1+ Every primitive accepts the universal props (`visible`, `sizing`, `opacity`, `rotation`) and the optional `bindUniversal` map for reactive variants. Schema-level coverage. (LSML 1.1 §5.4, §5.4.2).
+tag: required
+target: server
+spec_refs:
+  - LSML-1#54-universal-props-11
+  - LSML-1#542-bindable-universal-props-11
+
+bundles:
+  - id: universal-bundle
+    inline:
+      $schema: https://lumencast.dev/schema/lsml/1.1/schema.json
+      lsml: "1.1"
+      scene_id: universal
+      scene_version: sha256:7878787878787878787878787878787878787878787878787878787878787878
+      layout:
+        kind: frame
+        size: { w: 1920, h: 1080 }
+        opacity: 0.95
+        rotation: 0
+        visible: true
+        children:
+          - kind: text
+            bind: { value: "title" }
+            visible: true
+            sizing: { x: fill, y: hug }
+            opacity: 0.9
+            rotation: 5
+          - kind: image
+            bind: { src: "logo_url" }
+            alt: ""
+            size: { w: 100, h: 100 }
+            bindUniversal:
+              visible: "ui.show_logo"
+              opacity: "ui.fade_amount"
+      defaults:
+        title: "Hello"
+        logo_url: ""
+        "ui.show_logo": true
+        "ui.fade_amount": 1
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: universal
+      scene_version: $ANY_HASH
+      state: $ANY

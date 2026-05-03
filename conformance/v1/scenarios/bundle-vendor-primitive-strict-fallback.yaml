@@ -1,0 +1,38 @@
+name: bundle-vendor-primitive-strict-fallback
+description: LSML 1.1+ A bundle using an `x-<vendor>.<name>` primitive that the runtime does not recognise MUST be rejected with `BUNDLE_INCOMPATIBLE` (strict fallback per §15.1, restated in §17.1.2). Rendering a partial tree with unknown primitives invisibly skipped would mislead the operator.
+tag: required
+target: runtime
+spec_refs:
+  - LSML-1#1712-validation-behaviour
+  - LSML-1#171-vendor-prefixed-primitive-kind-values-11
+  - ERROR-CODES#bundle_incompatible
+
+bundles:
+  - id: vendor-bundle
+    inline:
+      $schema: https://lumencast.dev/schema/lsml/1.1/schema.json
+      lsml: "1.1"
+      scene_id: vendor-test
+      scene_version: sha256:dededededededededededededededededededededededededededededededede
+      layout:
+        kind: frame
+        size: { w: 100, h: 100 }
+        children:
+          - kind: x-totally-fictional.heatmap
+            data_path: metrics
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: error
+      seq: 1
+      code: BUNDLE_INCOMPATIBLE
+      message: $ANY
+      recoverable: false

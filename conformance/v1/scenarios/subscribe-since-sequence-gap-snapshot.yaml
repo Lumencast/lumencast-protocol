@@ -1,0 +1,25 @@
+name: subscribe-since-sequence-gap-snapshot
+description: 1.1+ When `since_sequence` falls outside the server's replay buffer window, the server MUST respond with a fresh snapshot (sequence reset). The client discards its cached state. (LSDP/1.1 §4.1, §18).
+tag: required
+target: server
+spec_refs:
+  - LSDP-1#41-subscribe
+  - LSDP-1#18-incremental-resume
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+      since_sequence: 999999
+
+  # Replay buffer doesn't cover seq 999999, so server falls back to snapshot.
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: $ANY
+      scene_version: $ANY_HASH
+      state: $ANY

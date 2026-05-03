@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "spec": {
-    "lsdp": "1",
-    "lsml": "1.0"
+    "lsdp": "1.1",
+    "lsml": "1.1"
   },
   "scenarios": [
     {
@@ -11,140 +11,319 @@
       "path": "v1/scenarios/subscribe-snapshot-delta.yaml",
       "tag": "required",
       "target": "runtime",
-      "covers": ["LSDP-1#3", "LSDP-1#6"]
+      "covers": [
+        "LSDP-1#3",
+        "LSDP-1#6"
+      ]
     },
     {
       "id": "delta-multiple-patches-atomic",
       "path": "v1/scenarios/delta-multiple-patches-atomic.yaml",
       "tag": "required",
       "target": "runtime",
-      "covers": ["LSDP-1#3.2"]
+      "covers": [
+        "LSDP-1#3.2"
+      ]
     },
     {
       "id": "delta-replay-tolerated",
       "path": "v1/scenarios/delta-replay-tolerated.yaml",
       "tag": "required",
       "target": "runtime",
-      "covers": ["LSDP-1#5"]
+      "covers": [
+        "LSDP-1#5"
+      ]
     },
     {
       "id": "seq-gap-triggers-reconnect",
       "path": "v1/scenarios/seq-gap-triggers-reconnect.yaml",
       "tag": "required",
       "target": "runtime",
-      "covers": ["LSDP-1#5", "LSDP-1#7"]
+      "covers": [
+        "LSDP-1#5",
+        "LSDP-1#7"
+      ]
     },
     {
       "id": "seq-resets-on-scene-changed",
       "path": "v1/scenarios/seq-resets-on-scene-changed.yaml",
       "tag": "required",
       "target": "runtime",
-      "covers": ["LSDP-1#3.3", "LSDP-1#5"]
+      "covers": [
+        "LSDP-1#3.3",
+        "LSDP-1#5"
+      ]
     },
     {
       "id": "auth-denied-closes",
       "path": "v1/scenarios/auth-denied-closes.yaml",
       "tag": "required",
       "target": "server",
-      "covers": ["LSDP-1#8", "ERROR-CODES#auth_denied"]
+      "covers": [
+        "LSDP-1#8",
+        "ERROR-CODES#auth_denied"
+      ]
     },
     {
       "id": "viewer-cannot-input",
       "path": "v1/scenarios/viewer-cannot-input.yaml",
       "tag": "required",
       "target": "server",
-      "covers": ["LSDP-1#9", "ERROR-CODES#write_forbidden"]
+      "covers": [
+        "LSDP-1#9",
+        "ERROR-CODES#write_forbidden"
+      ]
     },
     {
       "id": "operator-input-echoes-as-delta",
       "path": "v1/scenarios/operator-input-echoes-as-delta.yaml",
       "tag": "required",
       "target": "server",
-      "covers": ["LSDP-1#4.2", "LSDP-1#9"]
+      "covers": [
+        "LSDP-1#4.2",
+        "LSDP-1#9"
+      ]
     },
     {
       "id": "unknown-path-rejected",
       "path": "v1/scenarios/unknown-path-rejected.yaml",
       "tag": "required",
       "target": "server",
-      "covers": ["LSDP-1#4.2", "ERROR-CODES#unknown_path"]
+      "covers": [
+        "LSDP-1#4.2",
+        "ERROR-CODES#unknown_path"
+      ]
     },
     {
       "id": "invalid-value-rejected",
       "path": "v1/scenarios/invalid-value-rejected.yaml",
       "tag": "required",
       "target": "server",
-      "covers": ["LSDP-1#4.2", "ERROR-CODES#invalid_value"]
+      "covers": [
+        "LSDP-1#4.2",
+        "ERROR-CODES#invalid_value"
+      ]
     },
     {
       "id": "test-session-namespace",
       "path": "v1/scenarios/test-session-namespace.yaml",
       "tag": "required",
       "target": "server",
-      "covers": ["LSDP-1#9", "LSDP-1#10"]
+      "covers": [
+        "LSDP-1#9",
+        "LSDP-1#10"
+      ]
     },
     {
       "id": "bundle-incompatible-rejects",
       "path": "v1/scenarios/bundle-incompatible-rejects.yaml",
       "tag": "required",
       "target": "runtime",
-      "covers": ["LSML-1#15", "ERROR-CODES#bundle_incompatible"]
+      "covers": [
+        "LSML-1#15",
+        "ERROR-CODES#bundle_incompatible"
+      ]
     },
     {
       "id": "token-rotation-no-flicker",
       "path": "v1/scenarios/token-rotation-no-flicker.yaml",
       "tag": "required",
       "target": "runtime",
-      "covers": ["LSDP-1#8"]
+      "covers": [
+        "LSDP-1#8"
+      ]
     },
     {
       "id": "ping-pong-roundtrip",
       "path": "v1/scenarios/ping-pong-roundtrip.yaml",
       "tag": "required",
       "target": "any",
-      "covers": ["LSDP-1#12"]
+      "covers": [
+        "LSDP-1#12"
+      ]
     },
     {
       "id": "envelope-rejects-future-major",
       "path": "v1/scenarios/envelope-rejects-future-major.yaml",
       "tag": "required",
       "target": "server",
-      "covers": ["LSDP-1#13"]
+      "covers": [
+        "LSDP-1#13"
+      ]
     },
     {
       "id": "unknown-frame-type-ignored",
       "path": "v1/scenarios/unknown-frame-type-ignored.yaml",
       "tag": "recommended",
       "target": "runtime",
-      "covers": ["LSDP-1#13"]
+      "covers": [
+        "LSDP-1#13"
+      ]
     },
     {
       "id": "error-path-on-write-forbidden",
       "path": "v1/scenarios/error-path-on-write-forbidden.yaml",
       "tag": "required",
       "target": "server",
-      "covers": ["LSDP-1#3.4.1", "ERROR-CODES#write_forbidden"]
+      "covers": [
+        "LSDP-1#3.4.1",
+        "ERROR-CODES#write_forbidden"
+      ]
     },
     {
       "id": "error-path-on-unknown-path",
       "path": "v1/scenarios/error-path-on-unknown-path.yaml",
       "tag": "required",
       "target": "server",
-      "covers": ["LSDP-1#3.4.1", "ERROR-CODES#unknown_path"]
+      "covers": [
+        "LSDP-1#3.4.1",
+        "ERROR-CODES#unknown_path"
+      ]
     },
     {
       "id": "error-path-on-invalid-value",
       "path": "v1/scenarios/error-path-on-invalid-value.yaml",
       "tag": "required",
       "target": "server",
-      "covers": ["LSDP-1#3.4.1", "ERROR-CODES#invalid_value", "LSML-1#8.1"]
+      "covers": [
+        "LSDP-1#3.4.1",
+        "ERROR-CODES#invalid_value",
+        "LSML-1#8.1"
+      ]
     },
     {
       "id": "input-rejects-object-value",
       "path": "v1/scenarios/input-rejects-object-value.yaml",
       "tag": "required",
       "target": "server",
-      "covers": ["LSDP-1#3.2.1", "ERROR-CODES#invalid_value"]
+      "covers": [
+        "LSDP-1#3.2.1",
+        "ERROR-CODES#invalid_value"
+      ]
+    },
+    {
+      "id": "subscribe-since-sequence-resumes",
+      "path": "v1/scenarios/subscribe-since-sequence-resumes.yaml",
+      "tag": "required",
+      "target": "server",
+      "covers": [
+        "LSDP-1#4.1",
+        "LSDP-1#18"
+      ]
+    },
+    {
+      "id": "subscribe-since-sequence-gap-snapshot",
+      "path": "v1/scenarios/subscribe-since-sequence-gap-snapshot.yaml",
+      "tag": "required",
+      "target": "server",
+      "covers": [
+        "LSDP-1#4.1",
+        "LSDP-1#18"
+      ]
+    },
+    {
+      "id": "unsubscribe-closes-connection",
+      "path": "v1/scenarios/unsubscribe-closes-connection.yaml",
+      "tag": "required",
+      "target": "server",
+      "covers": [
+        "LSDP-1#4.4"
+      ]
+    },
+    {
+      "id": "input-client-msg-id-echoed-in-cause",
+      "path": "v1/scenarios/input-client-msg-id-echoed-in-cause.yaml",
+      "tag": "required",
+      "target": "server",
+      "covers": [
+        "LSDP-1#4.2",
+        "LSDP-1#3.2.3"
+      ]
+    },
+    {
+      "id": "ping-pong-nonce-correlation",
+      "path": "v1/scenarios/ping-pong-nonce-correlation.yaml",
+      "tag": "required",
+      "target": "any",
+      "covers": [
+        "LSDP-1#4.3",
+        "LSDP-1#3.5"
+      ]
+    },
+    {
+      "id": "delta-per-leaf-transition-directive",
+      "path": "v1/scenarios/delta-per-leaf-transition-directive.yaml",
+      "tag": "required",
+      "target": "runtime",
+      "covers": [
+        "LSDP-1#3.2.2"
+      ]
+    },
+    {
+      "id": "delta-cause-debug-only",
+      "path": "v1/scenarios/delta-cause-debug-only.yaml",
+      "tag": "required",
+      "target": "runtime",
+      "covers": [
+        "LSDP-1#3.2.3"
+      ]
+    },
+    {
+      "id": "scene-changed-with-transition",
+      "path": "v1/scenarios/scene-changed-with-transition.yaml",
+      "tag": "required",
+      "target": "runtime",
+      "covers": [
+        "LSDP-1#3.3.1"
+      ]
+    },
+    {
+      "id": "bundle-instance-primitive-validates",
+      "path": "v1/scenarios/bundle-instance-primitive-validates.yaml",
+      "tag": "required",
+      "target": "server",
+      "covers": [
+        "LSML-1#4.9"
+      ]
+    },
+    {
+      "id": "bundle-multifill-shape-validates",
+      "path": "v1/scenarios/bundle-multifill-shape-validates.yaml",
+      "tag": "required",
+      "target": "server",
+      "covers": [
+        "LSML-1#4.6",
+        "LSML-1#4.12"
+      ]
+    },
+    {
+      "id": "bundle-universal-props-validates",
+      "path": "v1/scenarios/bundle-universal-props-validates.yaml",
+      "tag": "required",
+      "target": "server",
+      "covers": [
+        "LSML-1#5.4"
+      ]
+    },
+    {
+      "id": "bundle-unsupported-profile-rejected",
+      "path": "v1/scenarios/bundle-unsupported-profile-rejected.yaml",
+      "tag": "required",
+      "target": "runtime",
+      "covers": [
+        "LSML-1#17.3",
+        "ERROR-CODES#bundle_incompatible"
+      ]
+    },
+    {
+      "id": "bundle-vendor-primitive-strict-fallback",
+      "path": "v1/scenarios/bundle-vendor-primitive-strict-fallback.yaml",
+      "tag": "required",
+      "target": "runtime",
+      "covers": [
+        "LSML-1#17.1",
+        "ERROR-CODES#bundle_incompatible"
+      ]
     }
   ],
   "fixtures": {

@@ -1,0 +1,35 @@
+name: ping-pong-nonce-correlation
+description: 1.1+ A `ping` frame MAY carry a `nonce` ; the receiver MUST echo it verbatim in the matching `pong`. Lets the sender correlate the response to a specific ping for latency-probing. (LSDP/1.1 §4.3, §3.5).
+tag: required
+target: any
+spec_refs:
+  - LSDP-1#43-ping
+  - LSDP-1#35-pong
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: $ANY
+      scene_version: $ANY_HASH
+      state: $ANY
+
+  - kind: client-sends
+    frame:
+      v: 1
+      type: ping
+      nonce: probe-7a2c
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: pong
+      nonce: probe-7a2c
