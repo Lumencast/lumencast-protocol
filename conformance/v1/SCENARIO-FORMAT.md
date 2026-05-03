@@ -158,12 +158,16 @@ Defined actions:
 
 ### `expect-no-frame-for`
 
-Verify no server frame arrives for a duration. Used to test silence (e.g., heartbeat behaviour).
+Verify no server frame arrives for a duration. Used to test silence (e.g., heartbeat behaviour, clean shutdown after `unsubscribe`).
 
 ```yaml
 - kind: expect-no-frame-for
   duration_ms: 1000
 ```
+
+**Connection-close semantics** : a clean WebSocket closure by the server within the duration window — close codes `1000` (Normal Closure), `1001` (Going Away), or `1005` (No Status) — counts as **success** for this step. The intent is "no data flowed" ; a server that closes cleanly satisfies that contract because the harness observed no frame before the close. Abnormal closures (`1002` Protocol Error, `1006` Abnormal Closure, `1011` Internal Error, etc.) are still failures — the test is verifying graceful behaviour, not crash recovery.
+
+This permissive interpretation is required for scenarios that test the §4.4 `unsubscribe` contract, where the server MUST close the WebSocket within 1 second. Strict harnesses would otherwise need a separate `expect-server-closes` step for what is conceptually the same assertion.
 
 ### `wait`
 
