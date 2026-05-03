@@ -66,11 +66,28 @@ The server :
 1. Drops every existing scene
 2. Registers a fresh scene named `bundles[0].id` (the canonical scenario bundle)
 3. Pins its `scene_version` to `bundles[0].hash`
-4. Initialises the scene state from `initial_state`
-5. Re-installs token recognition so the placeholder map matches the request
-6. Returns the WebSocket URL the harness should dial for this scenario
+4. Parses `bundles[0].inline` for scene metadata (see "Inline bundle parsing" below)
+5. Initialises the scene state from `initial_state` (or `inline.defaults` if `initial_state` is absent)
+6. Re-installs token recognition so the placeholder map matches the request
+7. Returns the WebSocket URL the harness should dial for this scenario
 
 Multiple bundles MAY be declared ; the first is the active scene, additional bundles are made available for `bundle-incompatible` style negotiation. Servers that do not support bundle negotiation respond `200 OK` and ignore the extras.
+
+#### Robustness
+
+Servers MUST accept `null`, omitted, or `[]`/`{}` for any of `tokens`, `bundles`, `initial_state` and treat them as empty. Cross-language harnesses serialise empty maps as `null` in some languages ; rejecting these as 422 makes scenarios with no seeded state (auth rejection, envelope errors) fail to even start.
+
+#### Inline bundle parsing
+
+`bundles[i].inline` is the inline LSML body. Servers SHOULD extract the following fields when present and apply them to the registered scene :
+
+| Field | Purpose |
+|---|---|
+| `inline.scene_id` | When present, MUST override `bundles[i].id` for the scene's emitted `scene_id` (the bundle's `id` field is the scenario-local reference, used for `$BUNDLE.<id>.hash` placeholder resolution). |
+| `inline.operator_inputs` | List of `{path, type, constraints}` objects. The server MUST enforce path declaredness (reject input frames targeting undeclared paths with `UNKNOWN_PATH`) and apply the constraints (`maxLength`, `min`/`max`, `values`) per LSML 1.0 § 8. |
+| `inline.defaults` | Map of `path → value`. Used as the scene's initial state when `initial_state` is empty. |
+
+Servers that do not support a given field SHOULD ignore it and continue. Scenarios that depend on enforcement (`invalid-value-rejected`, `unknown-path-rejected`) will fail against such servers, surfacing the gap at the matrix level.
 
 ### `POST /test/reset`
 
@@ -99,7 +116,7 @@ If no scene is active (no `/test/setup` since the last `/test/reset`), respond `
 
 ### `POST /test/emit`
 
-Schedules a server-driven delta. Used to script `server-sends` steps that follow `client-sends` (e.g. an operator input that should produce a delta echo). The harness calls this after the corresponding `client-sends` is acknowledged or before a `server-sends` step.
+Schedules a server-driven delta. Used by the [`server-emits`](../conformance/v1/SCENARIO-FORMAT.md#server-emits) scenario step kind to script frames that have no natural protocol trigger (e.g. a delta the test author wants to inject without simulating an operator input). The harness calls this immediately before reading the next frame from the WebSocket.
 
 Request body :
 
