@@ -27,6 +27,9 @@ LSML is what HTML is to HTTP : the format whose instances are transported by the
 13. [Accessibility invariants](#13-accessibility-invariants)
 14. [Validation](#14-validation)
 15. [Versioning & compatibility](#15-versioning--compatibility)
+16. (reserved)
+17. [Extension mechanisms (1.1+)](#17-extension-mechanisms-11)
+18. [On-disk format](#18-on-disk-format)
 
 ## 1. Document structure
 
@@ -34,7 +37,8 @@ A scene bundle is a JSON object with the following top-level shape:
 
 ```json
 {
-  "lsml": "1.0",
+  "$schema": "https://lumencast.dev/schema/lsml/1.1/schema.json",
+  "lsml": "1.1",
   "scene_id": "main-stage",
   "scene_version": "sha256:abc123...",
   "layout": { ... },
@@ -43,13 +47,15 @@ A scene bundle is a JSON object with the following top-level shape:
   "defaults": { ... },
   "assets": { ... },
   "i18n": { ... },
-  "metadata": { ... }
+  "metadata": { ... },
+  "profiles": [ ... ]
 }
 ```
 
 | Field | Required | Type | Description |
 |---|---|---|---|
-| `lsml` | yes | string | Schema version. MUST be `"1.0"` for this spec. |
+| `$schema` | optional | string | Recommended for on-disk bundles. URL of the JSON Schema this bundle conforms to. Enables auto-validation and autocomplete in JSON-Schema-aware editors. Ignored by runtimes (informational only). See §18. |
+| `lsml` | yes | string | Schema version. `"1.0"` (and the 1.0.1 errata-compat alias) or `"1.1"`. |
 | `scene_id` | yes | string | Stable identifier for the scene. Operator-chosen, not derived. |
 | `scene_version` | yes | string | Content hash of the bundle (see §3). |
 | `layout` | yes | PrimitiveNode | The root node of the visual tree. |
@@ -59,6 +65,7 @@ A scene bundle is a JSON object with the following top-level shape:
 | `assets` | optional | object | Asset declarations (URL allowlist, integrity hashes). |
 | `i18n` | optional | object | Internationalization tables. |
 | `metadata` | optional | object | Authoring metadata (author, description, tags). Not consumed by runtime. |
+| `profiles` | optional | array of string | (1.1+) Capability profiles required for correct rendering (§17.3). |
 
 Receivers MUST ignore unknown top-level fields (forward compatibility).
 
@@ -1239,9 +1246,125 @@ If none of these fit, the developer is hitting LSML's domain edge — the right 
 
 ---
 
+## 18. On-disk format
+
+A scene bundle is **a JSON document** (RFC 8259). LSML defines no syntax of its own ; the *format* is JSON, the *schema* is LSML, the *brand* is `.lsml`. This section formalises the on-disk and on-the-wire conventions for storing and exchanging bundles.
+
+### 18.1 File extension
+
+| Extension | Status | Use |
+|---|---|---|
+| `.lsml` | preferred | Primary extension for scene bundles. |
+| `.lsml.json` | accepted | Alternative form ; explicit dual extension makes the JSON nature obvious to legacy tooling. Treated as identical to `.lsml`. |
+| `.json` | accepted | Tolerated for legacy or generic-tooling contexts. Producers SHOULD prefer `.lsml`. |
+
+A bundle's bytes MUST be valid JSON regardless of the chosen extension. There is no `.lsml`-specific syntax extension : an `.lsml` file opened in any JSON parser parses cleanly.
+
+### 18.2 Media type
+
+The IANA-style media type for a Lumencast scene bundle is :
+
+```
+application/lsml+json
+```
+
+The `+json` suffix per [RFC 6839](https://www.rfc-editor.org/rfc/rfc6839) declares JSON as the structural syntax. HTTP servers serving bundles SHOULD set `Content-Type: application/lsml+json ; charset=utf-8`. Clients MAY also accept `application/json` to remain interoperable with generic tools.
+
+For bundles transferred over LSDP frames (§LSDP-1.md), the wire format is opaque — bundles are JSON values nested inside frame payloads, not standalone documents. Media-type negotiation only applies to standalone exchanges (REST APIs, file uploads, GraphQL).
+
+### 18.3 Encoding
+
+Bundles MUST be encoded as **UTF-8** without BOM, per RFC 8259 §8.1. Producers MUST NOT emit a UTF-8 BOM ; consumers SHOULD strip one if present for robustness.
+
+Line endings are NOT normative. JSON parsers ignore trailing whitespace, so `LF` and `CRLF` are both accepted. The canonical form (§3.1, JCS) emits no trailing newline.
+
+### 18.4 The `$schema` field
+
+LSML bundles SHOULD declare a top-level `$schema` field pointing at the JSON Schema URL for the version they conform to :
+
+```json
+{
+  "$schema": "https://lumencast.dev/schema/lsml/1.1/schema.json",
+  "lsml": "1.1",
+  ...
+}
+```
+
+The schema URL convention is :
+
+```
+https://lumencast.dev/schema/lsml/<major>.<minor>/schema.json
+```
+
+Editors with JSON Schema support (VS Code, JetBrains IDEs, Vim with `coc-json` or `vim-jsonschema`, Neovim with `nvim-lspconfig` + `vscode-json-languageserver`) auto-resolve `$schema` URLs and provide :
+
+- structural validation as you type
+- autocompletion of property names and enum values
+- inline documentation hovers (sourced from `description` fields in the schema)
+
+`$schema` is **informational only** — runtimes MUST ignore it for rendering and validation decisions (the version-of-record is `lsml`, not the URL). A bundle without `$schema` is fully valid ; the field exists purely to enable the editor experience.
+
+The `$schema` field SHOULD be the **first** key in the JSON object (or second, after `$schema`) so file-detection heuristics that read the prefix can recognise the document.
+
+### 18.5 Magic-key detection
+
+A consumer that needs to detect "is this an LSML bundle ?" without relying on filename or media type can read the JSON and check :
+
+- top-level field `lsml` exists, AND
+- its value matches `^1\.\d+$` (or whatever range the consumer supports)
+
+This is sufficient to disambiguate from arbitrary JSON. The `lsml` field is present in every bundle (it is required by the schema).
+
+For binary detection (file managers, magic-byte sniffers), the first non-whitespace bytes of an LSML bundle are always `{` followed eventually by `"$schema"` or `"lsml"`. There is no LSML-specific magic byte sequence — this is intentional, to keep the format trivially convertible from generic JSON.
+
+### 18.6 Authoring affordances
+
+JSON does not natively support comments. For authoring, two paths exist :
+
+1. **JSON-with-comments (JSONC)** — strip comments at load time. VS Code and many other editors support `.json` files with `//` and `/* */` comments via the `jsonc` parser. **JSONC is NOT a normative LSML feature.** A bundle that contains comments MUST be JSONC-stripped before being shipped to a runtime ; runtimes only accept strict RFC 8259 JSON. Authors MAY use JSONC locally and pre-process before publishing.
+2. **`metadata` field** — the open-ended `metadata` object (§1) is a runtime-ignored escape hatch for authoring annotations (author, description, tags, editor state). Future-proof for any non-runtime data.
+
+If a richer authoring layer is needed in the future (templates, interpolation, includes), it will be introduced as a separate compile-to-LSML toolchain (`lsml-fmt` or similar), NOT as a change to the on-disk format. The on-disk format stays JSON.
+
+### 18.7 Compression
+
+For network transport, bundles SHOULD be served with HTTP `Content-Encoding: gzip` or `br`. JSON compresses well (typically 5–15× ratio) ; uncompressed transfers are wasteful.
+
+For at-rest storage, bundles are typically small enough that compression is unnecessary. Storage layers that compress whole columns (e.g. Postgres TOAST) handle this transparently.
+
+### 18.8 Example
+
+A minimal bundle saved as `hello.lsml` :
+
+```json
+{
+  "$schema": "https://lumencast.dev/schema/lsml/1.1/schema.json",
+  "lsml": "1.1",
+  "scene_id": "hello",
+  "scene_version": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "layout": {
+    "kind": "frame",
+    "size": { "w": 1920, "h": 1080 },
+    "background": "#000",
+    "children": [
+      {
+        "kind": "text",
+        "bind": { "value": "title" },
+        "style": { "fontSize": 48, "color": "#fff", "textAlign": "center" }
+      }
+    ]
+  },
+  "defaults": { "title": "Hello, Lumencast" }
+}
+```
+
+Open this file in VS Code with the JSON language service active, and `$schema` resolution gives autocomplete + validation immediately, no extension needed.
+
+---
+
 ## Reference
 
-- [JSON Schema for LSML 1.0](schema.json) (canonical machine-readable spec)
+- [JSON Schema for LSML 1.x](schema.json) (canonical machine-readable spec)
 - [LSDP/1 wire protocol](LSDP-1.md) (how bundles travel)
 - [Error code taxonomy](ERROR-CODES.md)
 - [Conformance suite](../conformance/README.md)

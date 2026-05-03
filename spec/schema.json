@@ -8,6 +8,11 @@
   "required": ["lsml", "scene_id", "scene_version", "layout"],
   "additionalProperties": true,
   "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri",
+      "description": "Recommended for on-disk bundles. URL of the JSON Schema this bundle conforms to. Enables auto-validation and autocomplete in JSON-Schema-aware editors. Ignored by runtimes (informational only). See LSML §18.4."
+    },
     "lsml": {
       "type": "string",
       "enum": ["1.0", "1.1"],

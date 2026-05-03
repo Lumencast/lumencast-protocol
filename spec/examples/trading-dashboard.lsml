@@ -1,0 +1,481 @@
+{
+  "$schema": "https://lumencast.dev/schema/lsml/1.0/schema.json",
+  "lsml": "1.0",
+  "scene_id": "trading-dashboard",
+  "scene_version": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "metadata": {
+    "author": "Lumencast",
+    "description": "Non-broadcast vertical reference. Trading desk wall display with live order book, P&L summary, and a watch-list of symbols. Push frequency typical of an order feed (10-100 deltas/sec). Intentionally exercises grid layouts and number/percent format specs.",
+    "tags": [
+      "dashboard",
+      "finance",
+      "reference"
+    ]
+  },
+  "layout": {
+    "kind": "frame",
+    "size": {
+      "w": 2560,
+      "h": 1440
+    },
+    "background": "#0a0e1a",
+    "children": [
+      {
+        "kind": "stack",
+        "direction": "vertical",
+        "gap": 24,
+        "padding": [
+          32,
+          32,
+          32,
+          32
+        ],
+        "children": [
+          {
+            "kind": "stack",
+            "direction": "horizontal",
+            "gap": 24,
+            "align": "center",
+            "justify": "space-between",
+            "children": [
+              {
+                "kind": "text",
+                "bind": {
+                  "value": "desk.name"
+                },
+                "style": {
+                  "fontSize": 28,
+                  "fontWeight": 700,
+                  "color": "#ffffff"
+                },
+                "role": "heading"
+              },
+              {
+                "kind": "text",
+                "bind": {
+                  "value": "desk.session_clock"
+                },
+                "style": {
+                  "fontSize": 20,
+                  "color": "#94a3b8",
+                  "fontFamily": "monospace"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "grid",
+            "columns": 3,
+            "gap": [
+              16,
+              24
+            ],
+            "children": [
+              {
+                "kind": "frame",
+                "size": {
+                  "w": 800,
+                  "h": 240
+                },
+                "background": "#111827",
+                "children": [
+                  {
+                    "kind": "stack",
+                    "direction": "vertical",
+                    "gap": 8,
+                    "padding": [
+                      16,
+                      16,
+                      16,
+                      16
+                    ],
+                    "children": [
+                      {
+                        "kind": "text",
+                        "bind": {
+                          "value": "i18n.pnl_heading"
+                        },
+                        "style": {
+                          "fontSize": 14,
+                          "color": "#64748b",
+                          "textTransform": "uppercase",
+                          "letterSpacing": 2
+                        },
+                        "role": "heading"
+                      },
+                      {
+                        "kind": "text",
+                        "bind": {
+                          "value": "pnl.total"
+                        },
+                        "format": {
+                          "kind": "currency",
+                          "options": {
+                            "currency": "USD",
+                            "minimumFractionDigits": 2
+                          }
+                        },
+                        "style": {
+                          "fontSize": 48,
+                          "fontWeight": 700,
+                          "color": "#22c55e"
+                        }
+                      },
+                      {
+                        "kind": "text",
+                        "bind": {
+                          "value": "pnl.change_pct"
+                        },
+                        "format": {
+                          "kind": "percent",
+                          "options": {
+                            "minimumFractionDigits": 2
+                          }
+                        },
+                        "style": {
+                          "fontSize": 18,
+                          "color": "#94a3b8"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "frame",
+                "size": {
+                  "w": 800,
+                  "h": 240
+                },
+                "background": "#111827",
+                "children": [
+                  {
+                    "kind": "stack",
+                    "direction": "vertical",
+                    "gap": 8,
+                    "padding": [
+                      16,
+                      16,
+                      16,
+                      16
+                    ],
+                    "children": [
+                      {
+                        "kind": "text",
+                        "bind": {
+                          "value": "i18n.exposure_heading"
+                        },
+                        "style": {
+                          "fontSize": 14,
+                          "color": "#64748b",
+                          "textTransform": "uppercase",
+                          "letterSpacing": 2
+                        },
+                        "role": "heading"
+                      },
+                      {
+                        "kind": "text",
+                        "bind": {
+                          "value": "exposure.gross"
+                        },
+                        "format": {
+                          "kind": "currency",
+                          "options": {
+                            "currency": "USD",
+                            "minimumFractionDigits": 0
+                          }
+                        },
+                        "style": {
+                          "fontSize": 36,
+                          "fontWeight": 700,
+                          "color": "#ffffff"
+                        }
+                      },
+                      {
+                        "kind": "text",
+                        "bind": {
+                          "value": "exposure.utilization"
+                        },
+                        "format": {
+                          "kind": "percent"
+                        },
+                        "style": {
+                          "fontSize": 16,
+                          "color": "#fbbf24"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "kind": "frame",
+                "size": {
+                  "w": 800,
+                  "h": 240
+                },
+                "background": "#111827",
+                "children": [
+                  {
+                    "kind": "stack",
+                    "direction": "vertical",
+                    "gap": 8,
+                    "padding": [
+                      16,
+                      16,
+                      16,
+                      16
+                    ],
+                    "children": [
+                      {
+                        "kind": "text",
+                        "bind": {
+                          "value": "i18n.alerts_heading"
+                        },
+                        "style": {
+                          "fontSize": 14,
+                          "color": "#64748b",
+                          "textTransform": "uppercase",
+                          "letterSpacing": 2
+                        },
+                        "role": "heading"
+                      },
+                      {
+                        "kind": "text",
+                        "bind": {
+                          "value": "alerts.count"
+                        },
+                        "format": {
+                          "kind": "number"
+                        },
+                        "style": {
+                          "fontSize": 36,
+                          "fontWeight": 700,
+                          "color": "#ef4444"
+                        }
+                      },
+                      {
+                        "kind": "text",
+                        "bind": {
+                          "value": "alerts.last_message"
+                        },
+                        "maxLines": 2,
+                        "style": {
+                          "fontSize": 14,
+                          "color": "#cbd5e1"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "text",
+            "bind": {
+              "value": "i18n.watchlist_heading"
+            },
+            "style": {
+              "fontSize": 16,
+              "color": "#64748b",
+              "textTransform": "uppercase",
+              "letterSpacing": 2
+            },
+            "role": "heading"
+          },
+          {
+            "kind": "repeat",
+            "bind": {
+              "items": "watchlist"
+            },
+            "scope": "row",
+            "key": "{row}.symbol",
+            "limit": 50,
+            "template": {
+              "kind": "grid",
+              "columns": 5,
+              "gap": [
+                4,
+                16
+              ],
+              "children": [
+                {
+                  "kind": "text",
+                  "bind": {
+                    "value": "{row}.symbol"
+                  },
+                  "style": {
+                    "fontSize": 18,
+                    "fontFamily": "monospace",
+                    "color": "#e5e7eb"
+                  }
+                },
+                {
+                  "kind": "text",
+                  "bind": {
+                    "value": "{row}.last"
+                  },
+                  "format": {
+                    "kind": "number",
+                    "options": {
+                      "minimumFractionDigits": 2
+                    }
+                  },
+                  "style": {
+                    "fontSize": 18,
+                    "fontFamily": "monospace",
+                    "color": "#ffffff",
+                    "textAlign": "end"
+                  }
+                },
+                {
+                  "kind": "text",
+                  "bind": {
+                    "value": "{row}.change_pct"
+                  },
+                  "format": {
+                    "kind": "percent",
+                    "options": {
+                      "signDisplay": "always"
+                    }
+                  },
+                  "style": {
+                    "fontSize": 18,
+                    "fontFamily": "monospace",
+                    "textAlign": "end"
+                  }
+                },
+                {
+                  "kind": "text",
+                  "bind": {
+                    "value": "{row}.bid"
+                  },
+                  "format": {
+                    "kind": "number"
+                  },
+                  "style": {
+                    "fontSize": 16,
+                    "fontFamily": "monospace",
+                    "color": "#94a3b8",
+                    "textAlign": "end"
+                  }
+                },
+                {
+                  "kind": "text",
+                  "bind": {
+                    "value": "{row}.ask"
+                  },
+                  "format": {
+                    "kind": "number"
+                  },
+                  "style": {
+                    "fontSize": 16,
+                    "fontFamily": "monospace",
+                    "color": "#94a3b8",
+                    "textAlign": "end"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "operator_inputs": [
+    {
+      "path": "__inputs.alerts_threshold",
+      "label": "Alert threshold ($)",
+      "type": "number",
+      "constraints": {
+        "min": 0,
+        "max": 1000000,
+        "step": 1000
+      },
+      "writable_by": [
+        "operator"
+      ],
+      "group": "alerts",
+      "default": 50000
+    },
+    {
+      "path": "__inputs.watchlist_filter",
+      "label": "Watchlist filter",
+      "type": "enum",
+      "values": [
+        "all",
+        "long-only",
+        "short-only",
+        "winners",
+        "losers"
+      ],
+      "writable_by": [
+        "operator"
+      ],
+      "group": "watchlist",
+      "default": "all"
+    }
+  ],
+  "external_adapters": [
+    {
+      "kind": "websocket_subscribe",
+      "url": "wss://feed.example.com/orderbook",
+      "writes_to": "watchlist"
+    },
+    {
+      "kind": "http_poll",
+      "interval_ms": 1000,
+      "url": "https://api.example.com/desk/pnl",
+      "writes_to": "pnl"
+    },
+    {
+      "kind": "http_poll",
+      "interval_ms": 5000,
+      "url": "https://api.example.com/desk/exposure",
+      "writes_to": "exposure"
+    }
+  ],
+  "defaults": {
+    "desk.name": "Trading Desk",
+    "desk.session_clock": "00:00:00",
+    "pnl.total": 0,
+    "pnl.change_pct": 0,
+    "exposure.gross": 0,
+    "exposure.utilization": 0,
+    "alerts.count": 0,
+    "alerts.last_message": "",
+    "watchlist": []
+  },
+  "assets": {
+    "allowedHosts": [
+      "cdn.example.com",
+      "feed.example.com"
+    ],
+    "fonts": [
+      {
+        "family": "JetBrains Mono",
+        "url": "https://cdn.example.com/fonts/jetbrains-mono-regular.woff2",
+        "weight": 400,
+        "style": "normal"
+      }
+    ]
+  },
+  "i18n": {
+    "default_locale": "en-US",
+    "locales": {
+      "en-US": {
+        "i18n.pnl_heading": "P&L Today",
+        "i18n.exposure_heading": "Gross Exposure",
+        "i18n.alerts_heading": "Active Alerts",
+        "i18n.watchlist_heading": "Watchlist"
+      },
+      "fr-FR": {
+        "i18n.pnl_heading": "P&L du jour",
+        "i18n.exposure_heading": "Exposition brute",
+        "i18n.alerts_heading": "Alertes actives",
+        "i18n.watchlist_heading": "Liste de surveillance"
+      }
+    }
+  }
+}

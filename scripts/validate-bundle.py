@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 """Validate one or more LSML bundles against spec/schema.json.
 
+Bundles are JSON documents (RFC 8259). Any of these extensions are
+accepted — the bytes are identical, only the brand differs (LSML §18.1):
+
+    - .lsml          (preferred)
+    - .lsml.json     (alternative)
+    - .json          (legacy)
+
 Usage:
-    python scripts/validate-bundle.py <bundle.json> [<bundle2.json> ...]
-    python scripts/validate-bundle.py spec/examples/*.lsml.json
+    python scripts/validate-bundle.py <bundle.lsml> [<bundle2.lsml> ...]
+    python scripts/validate-bundle.py spec/examples/*.lsml
 
 Exits 0 if every bundle validates, 1 otherwise. Prints a per-file
 summary with error details on failure.

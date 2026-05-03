@@ -62,7 +62,7 @@ For conformance scenarios : does the YAML parse, does manifest.json index it ?
 For prose changes : did `markdownlint-cli2` and the link checker pass locally ?
 -->
 
-- [ ] `python scripts/validate-bundle.py spec/examples/*.lsml.json` passes
+- [ ] `python scripts/validate-bundle.py spec/examples/*.lsml` passes
 - [ ] CI is green on this PR
 
 ## Reviewer checklist
