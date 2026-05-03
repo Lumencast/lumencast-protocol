@@ -381,11 +381,20 @@
 
     "MediaNode": {
       "type": "object",
-      "required": ["kind", "kind_hint", "bind"],
+      "required": ["kind", "bind"],
       "additionalProperties": false,
       "properties": {
         "kind": { "const": "media" },
-        "kind_hint": { "type": "string", "enum": ["video", "audio"] },
+        "media_kind": {
+          "type": "string",
+          "enum": ["video", "audio"],
+          "description": "Canonical name as of LSML 1.0.1. Either media_kind or kind_hint MUST be present."
+        },
+        "kind_hint": {
+          "type": "string",
+          "enum": ["video", "audio"],
+          "description": "Deprecated synonym for media_kind. Accepted for backward compatibility ; new bundles SHOULD use media_kind."
+        },
         "bind": {
           "type": "object",
           "required": ["src"],
@@ -400,11 +409,9 @@
         "ariaLabel": { "type": "string" },
         "animate": { "$ref": "#/$defs/AnimateDirective" }
       },
-      "allOf": [
-        {
-          "if": { "properties": { "kind_hint": { "const": "video" } } },
-          "then": { "required": ["size"] }
-        }
+      "anyOf": [
+        { "required": ["media_kind"] },
+        { "required": ["kind_hint"] }
       ]
     },
 
@@ -454,25 +461,51 @@
       "required": ["path", "label", "type", "writable_by"],
       "additionalProperties": false,
       "properties": {
-        "path": { "$ref": "#/$defs/LeafPath" },
+        "path": {
+          "type": "string",
+          "description": "LeafPath under the __inputs.* reserved namespace (LSML §8). Must declare the full prefix.",
+          "pattern": "^__inputs\\.[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)*$",
+          "minLength": 9,
+          "maxLength": 512
+        },
         "label": { "type": "string", "minLength": 1 },
         "type": { "$ref": "#/$defs/OperatorInputType" },
         "constraints": {
           "type": "object",
-          "description": "Type-specific constraints. Schema is open ; runtime validates per type.",
-          "additionalProperties": true,
+          "description": "Closed constraint vocabulary per LSML 1.0.1 §8.1. Per-type subset of these keys.",
+          "additionalProperties": false,
           "properties": {
-            "minLength": { "type": "integer", "minimum": 0 },
-            "maxLength": { "type": "integer", "minimum": 0 },
-            "min": { "type": "number" },
-            "max": { "type": "number" },
-            "pattern": { "type": "string" },
-            "step": { "type": "number" }
+            "minLength": { "type": "integer", "minimum": 0, "description": "string only" },
+            "maxLength": { "type": "integer", "minimum": 0, "description": "string only" },
+            "pattern": { "type": "string", "description": "string only — RFC 5234 PCRE" },
+            "min": {
+              "oneOf": [
+                { "type": "number" },
+                { "type": "string", "format": "date" },
+                { "type": "string", "format": "time" }
+              ],
+              "description": "number / date / time"
+            },
+            "max": {
+              "oneOf": [
+                { "type": "number" },
+                { "type": "string", "format": "date" },
+                { "type": "string", "format": "time" }
+              ],
+              "description": "number / date / time"
+            },
+            "step": { "type": "number", "exclusiveMinimum": 0, "description": "number only" },
+            "values": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string" },
+              "description": "enum only — closed set of allowed values"
+            }
           }
         },
         "values": {
           "type": "array",
-          "description": "Required when type === 'enum'.",
+          "description": "Deprecated: prefer constraints.values. Accepted for backward compatibility with LSML 1.0 bundles.",
           "items": { "type": ["string", "number"] }
         },
         "writable_by": {
@@ -481,12 +514,26 @@
           "items": { "$ref": "#/$defs/OperatorInputRole" }
         },
         "group": { "type": "string", "description": "UI grouping label." },
-        "default": { "description": "Initial value if not in defaults map." }
+        "default": {
+          "description": "Initial value for the operator input. Equivalent to declaring the path in the bundle's `defaults` map (LSML §10) ; conflict resolution: `defaults` wins.",
+          "type": ["string", "number", "boolean", "null", "array"]
+        }
       },
       "allOf": [
         {
+          "description": "When type is enum, either constraints.values or top-level values MUST be set.",
           "if": { "properties": { "type": { "const": "enum" } } },
-          "then": { "required": ["values"] }
+          "then": {
+            "anyOf": [
+              { "required": ["values"] },
+              {
+                "properties": {
+                  "constraints": { "required": ["values"] }
+                },
+                "required": ["constraints"]
+              }
+            ]
+          }
         }
       ]
     },
@@ -495,14 +542,16 @@
       "type": "object",
       "required": ["kind", "writes_to"],
       "additionalProperties": true,
+      "description": "Generic envelope. Per-kind shape is enforced by spec/adapters/<kind>.json — see LSML 1.0 §9.1.",
       "properties": {
         "kind": {
           "type": "string",
-          "description": "Adapter type: http_poll, websocket_subscribe, pg_listen, webhook_receive, cron, etc."
+          "enum": ["http_poll", "websocket_subscribe", "pg_listen", "webhook_receive", "cron"],
+          "description": "Closed list for LSML 1.0 (§9.1). New kinds require a minor version bump."
         },
         "writes_to": {
           "$ref": "#/$defs/LeafPath",
-          "description": "Path prefix the adapter is allowed to write to."
+          "description": "LeafPath prefix the adapter is allowed to write to."
         }
       }
     },
