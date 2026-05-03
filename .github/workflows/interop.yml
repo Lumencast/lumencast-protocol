@@ -1,0 +1,124 @@
+name: interop
+
+# Cross-language interop matrix. Builds every Lumencast SDK that
+# implements the test control plane (see interop/CONTROL.md) and runs
+# every conformance scenario through every (server-impl × harness-impl)
+# pair.
+#
+# This workflow is INTENDED to run in degraded mode while SDKs roll out
+# their interop hooks : missing CLIs are reported as `n/a` rather than
+# causing the build to fail. As each SDK ships its `serve-scenario`
+# subcommand and `--control-url` flag, the corresponding cells of the
+# matrix turn green automatically without changes here.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Daily at 03:00 UTC, in case an SDK's main is updated outside of a
+    # PR-driven flow.
+    - cron: "0 3 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  matrix:
+    name: Cross-SDK interop
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout lumencast-protocol
+        uses: actions/checkout@v4
+        with:
+          path: lumencast-protocol
+
+      - name: Checkout lumencast-go
+        uses: actions/checkout@v4
+        with:
+          repository: Lumencast/lumencast-go
+          path: lumencast-go
+          # We tolerate the repo being missing or empty — the driver
+          # reports `n/a` for unbuilt SDKs.
+          continue-on-error: true
+
+      - name: Checkout lumencast-js
+        uses: actions/checkout@v4
+        with:
+          repository: Lumencast/lumencast-js
+          path: lumencast-js
+          continue-on-error: true
+
+      - name: Checkout lumencast-rs
+        uses: actions/checkout@v4
+        with:
+          repository: Lumencast/lumencast-rs
+          path: lumencast-rs
+          continue-on-error: true
+
+      - name: Setup Go
+        if: hashFiles('lumencast-go/go.mod') != ''
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: lumencast-go/go.mod
+          cache: true
+          cache-dependency-path: lumencast-go/go.sum
+
+      - name: Build lumencast-go
+        if: hashFiles('lumencast-go/go.mod') != ''
+        working-directory: lumencast-go
+        run: |
+          mkdir -p bin
+          go build -trimpath -o bin/lumencast ./cmd/lumencast || \
+            echo "::warning::lumencast-go build failed — cells using it will be skipped"
+
+      - name: Setup Node
+        if: hashFiles('lumencast-js/pnpm-workspace.yaml') != '' || hashFiles('lumencast-js/package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        if: hashFiles('lumencast-js/pnpm-workspace.yaml') != ''
+        uses: pnpm/action-setup@v4
+
+      - name: Build lumencast-js
+        if: hashFiles('lumencast-js/pnpm-workspace.yaml') != ''
+        working-directory: lumencast-js
+        run: |
+          pnpm install --frozen-lockfile && pnpm build || \
+            echo "::warning::lumencast-js build failed — cells using it will be skipped"
+
+      - name: Setup Rust
+        if: hashFiles('lumencast-rs/Cargo.toml') != ''
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build lumencast-rs
+        if: hashFiles('lumencast-rs/Cargo.toml') != ''
+        working-directory: lumencast-rs
+        run: |
+          cargo build --release --bin lumencast || \
+            echo "::warning::lumencast-rs build failed — cells using it will be skipped"
+
+      - name: Run matrix
+        working-directory: lumencast-protocol/interop
+        env:
+          LUMENCAST_GO: ${{ github.workspace }}/lumencast-go
+          LUMENCAST_JS: ${{ github.workspace }}/lumencast-js
+          LUMENCAST_RS: ${{ github.workspace }}/lumencast-rs
+          INTEROP_VERBOSE: 1
+        run: ./run-matrix.sh --report MATRIX.md || true
+        # `|| true` while the matrix is in roll-out mode. Once at least
+        # one (server, harness) pair is fully wired, drop the suffix so
+        # regressions fail the build.
+
+      - name: Upload matrix report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrix-report
+          path: lumencast-protocol/interop/MATRIX.md
+          if-no-files-found: ignore
