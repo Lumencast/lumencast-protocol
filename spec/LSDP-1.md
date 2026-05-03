@@ -778,6 +778,25 @@ When the buffer cannot satisfy a `since_sequence` request (because the requested
 
 A 1.0 server has no buffer and MUST ignore `since_sequence`, replying with a fresh `snapshot` per the original 1.0 contract.
 
+#### 18.1.1 Sequence-number semantics under resume (NORMATIVE)
+
+The `seq` counter is **per-scene, per-active-lifetime** in 1.1 — NOT per-subscription. Specifically :
+
+- Every scene maintains a single monotonic `seq` counter. The first frame ever emitted on the scene is `seq=1`.
+- A new subscription receives a `snapshot` whose `seq` is the **current** scene seq (which MAY be `1` if no deltas have been emitted yet, or a much larger number if the scene has been live for hours).
+- Subsequent deltas to that subscription continue from that point and increment in lockstep with the scene's global counter.
+- All concurrent subscribers see the same `seq` value on a given delta — the value is a property of the *frame*, not of any one connection.
+- `scene_changed` resets the counter to 0 (so the next snapshot is `seq=1`). The scene's identity changed ; its history is no longer relevant.
+
+This is the only design that makes incremental resume coherent : a client reconnecting with `since_sequence: N` is asking *"replay from the scene's seq=N+1 forward"*, which only has a well-defined answer if `seq` is global to the scene.
+
+**Migration note for 1.0 → 1.1 servers.** Pre-1.1 implementations frequently used a *per-subscription* counter (every new subscriber's first snapshot was `seq=1`). A 1.0 server upgrading to 1.1 MUST switch to the per-scene model described here. Two consequences :
+
+1. Late-joining subscribers will observe non-1 seq values on their first snapshot. Clients MUST NOT assume snapshot.seq == 1 ; they MUST take the value as authoritative.
+2. The 1.0 conformance scenario `subscribe-snapshot-delta` happens to hard-code `seq=1` in its expected snapshot frame because no prior deltas occurred ; this remains valid because the server starts with `seq=0` and increments on each emission. Scenarios that subscribe *after* deltas have flowed MUST use `$ANY` for the snapshot seq.
+
+**1.0 servers** continue to use whatever seq scheme they had before — they don't honour `since_sequence` and their `seq` semantics are out of scope for this spec.
+
 ### 18.2 Client expectations
 
 A client requesting resume :
