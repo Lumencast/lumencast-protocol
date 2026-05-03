@@ -56,7 +56,9 @@ Tokens are `$VARIABLE` placeholders resolved by the runner from the `tokens:` se
 
 ### `server-sends`
 
-The server sends a frame. When `target: runtime`, the runner emits this; when `target: server`, the runner expects the server-under-test to emit a matching frame.
+The server sends a frame in response to its **natural protocol behaviour** — a snapshot following a subscribe, a delta echoing an input, an error rejecting a malformed frame. When `target: runtime`, the runner emits this; when `target: server`, the runner expects the server-under-test to emit a matching frame **on its own**.
+
+If the scenario expects a frame that has no natural protocol trigger (e.g. a delta with no preceding `client-sends input`), use [`server-emits`](#server-emits) instead — `server-sends` MUST be reserved for frames the server emits without test orchestration.
 
 ```yaml
 - kind: server-sends
@@ -79,6 +81,33 @@ When the runner is in **expect** mode (target: server), `frame` matching follows
 - Field order doesn't matter (JSON object semantics).
 - Unknown fields in the actual frame are tolerated (forward compat).
 - Missing required fields fail.
+
+### `server-emits`
+
+The runner causes the server to emit a frame, then verifies the wire form matches. Used when the scenario expects a server-driven frame that has no natural protocol trigger — a delta the test author wants to inject as part of a script, not produced by client input or adapter logic.
+
+```yaml
+- kind: server-emits
+  frame:
+    v: 1
+    type: delta
+    seq: 2
+    patches:
+      - { path: count, value: 1 }
+```
+
+In server-target mode, the runner :
+
+1. Extracts the patches (or scene transition, or other server-driven state change) from `frame`.
+2. Triggers the change via the [test control plane](../../interop/CONTROL.md) — typically `POST /test/emit` for deltas.
+3. Reads the next frame from the WebSocket.
+4. Matches it against `frame` using the same rules as `server-sends`.
+
+In runtime-target mode, `server-emits` is identical to `server-sends` — the runner-as-server simply emits the frame on the wire.
+
+This step kind exists so scenarios can **describe an expected wire frame without specifying its trigger**. Scenarios that test natural server behaviour (snapshot-on-subscribe, delta-after-input) MUST use `server-sends` instead.
+
+`server-emits` currently supports `frame.type: delta` (via `POST /test/emit`). Other frame types — `snapshot`, `scene_changed`, `error`, `pong` — are reserved for future control plane extensions.
 
 ### `expect-runtime-state`
 
