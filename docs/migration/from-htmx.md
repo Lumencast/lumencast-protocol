@@ -118,7 +118,7 @@ events.put({"message": "User signed up", "timestamp": "now"})
 ```python
 from lumencast import Server, Identity
 
-bundle = json.load(open("./event-feed.lsml.json"))
+bundle = json.load(open("./event-feed.lsml"))
 
 def authenticate(token):
     if token == "viewer-secret":

@@ -156,7 +156,7 @@ import (
 )
 
 func main() {
-  bundleBytes, _ := os.ReadFile("./presence.lsml.json")
+  bundleBytes, _ := os.ReadFile("./presence.lsml")
   var bundle server.SceneBundle
   json.Unmarshal(bundleBytes, &bundle)
 
