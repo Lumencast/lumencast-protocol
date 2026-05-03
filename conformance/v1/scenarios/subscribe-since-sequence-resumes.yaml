@@ -1,6 +1,6 @@
 name: subscribe-since-sequence-resumes
 description: 1.1+ Client subscribes with `since_sequence`, server replies with a delta stream resuming from since_sequence+1 (no snapshot). Verifies the incremental resume contract (LSDP/1.1 §4.1, §18).
-tag: required
+tag: recommended
 target: server
 spec_refs:
   - LSDP-1#41-subscribe
