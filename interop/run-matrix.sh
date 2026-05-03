@@ -35,8 +35,9 @@ readonly SCENARIOS_DIR="${REPO_ROOT}/conformance/v1/scenarios"
 LUMENCAST_GO="${LUMENCAST_GO:-${REPO_ROOT}/../lumencast-go}"
 LUMENCAST_JS="${LUMENCAST_JS:-${REPO_ROOT}/../lumencast-js}"
 LUMENCAST_RS="${LUMENCAST_RS:-${REPO_ROOT}/../lumencast-rs}"
+LUMENCAST_PY="${LUMENCAST_PY:-${REPO_ROOT}/../lumencast-py}"
 
-readonly SDKS=(go js rs)
+readonly SDKS=(go js rs py)
 
 # Per-cell defaults.
 WANT_SERVER=""
@@ -48,8 +49,8 @@ usage() {
     cat <<USAGE
 usage: run-matrix.sh [--server NAME] [--harness NAME] [--scenario NAME] [--report FILE]
 
-  --server NAME    restrict to a single server impl (go | js | rs)
-  --harness NAME   restrict to a single harness impl (go | js | rs)
+  --server NAME    restrict to a single server impl (go | js | rs | py)
+  --harness NAME   restrict to a single harness impl (go | js | rs | py)
   --scenario NAME  restrict to a single scenario (no .yaml suffix)
   --report FILE    write a markdown report to FILE
   -h, --help       show this help
@@ -111,6 +112,22 @@ _resolve_sdk() {
                     ;;
                 conform)
                     echo "${bin} conformance --server {WS_URL} --control-url {CONTROL_URL}"
+                    ;;
+            esac
+            ;;
+        py)
+            # Prefer the project's uv-managed venv if present, else fall back
+            # to whichever python3 is on PATH (CI uses the latter via uv sync).
+            local entry="${LUMENCAST_PY}/.venv/bin/python"
+            [[ -x "${entry}" ]] || entry="${LUMENCAST_PY}/.venv/Scripts/python.exe"
+            [[ -x "${entry}" ]] || entry="$(command -v python3 || command -v python || true)"
+            [[ -x "${entry}" ]] || return 1
+            case "${mode}" in
+                serve)
+                    echo "${entry} -m lumencast serve-scenario --test-control-port {CONTROL_PORT} --ws-port {WS_PORT}"
+                    ;;
+                conform)
+                    echo "env LUMENCAST_PROTOCOL_REPO=${REPO_ROOT} ${entry} -m lumencast conformance --server {WS_URL} --control-url {CONTROL_URL}"
                     ;;
             esac
             ;;
