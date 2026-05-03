@@ -93,6 +93,31 @@ The cost : human-readable version numbers must be tracked separately (e.g. in th
 
 ---
 
+## 2026-05-03 — LSML 1.x authoring fidelity (universal `position`, `paths[]`, `clipsContent`)
+
+**Question** : when an authoring tool (Figma plugin, Sketch plugin, …) needs to round-trip per-leaf absolute position, multi-subpath geometry with winding rule, and frame clipping, should those live in `metadata.figma.*` (escape hatch §17.4) or be promoted to first-class spec fields ?
+
+**Answer** : promote, additively. LSML 1.1 gains :
+- `position` as a universal prop on every primitive (was frame/image-only).
+- `shape.paths[]` array as an alternative to `pathData` for multi-subpath geometry with per-subpath `windingRule` (`NONZERO` | `EVENODD`).
+- `frame.clipsContent` boolean (default `true`).
+- Cookbook clarification (§4.4.1) that authoring tools should map their native `textCase`/`textTransform` field to the existing `style.textTransform` rather than to `metadata.*`.
+
+**Reasoning** :
+- Absolute layout is universal across visual authoring tools (Figma, Sketch, XD, Penpot, Photoshop) — not a Figma quirk. It belongs in core, not in a vendor escape hatch.
+- Multi-subpath geometry is the standard output of any boolean-operation flatten. A single `pathData` string forces authoring tools to either drop subpaths (visually broken) or concatenate them with the wrong winding (visually wrong).
+- `metadata.figma.*` was actively used by `lumencast-figma` v0.1 and demonstrated the gap. Keeping it as the workaround makes bundles non-portable across SDKs that won't honour Figma-specific metadata.
+- All three additions are backward-compatible. 1.0 receivers ignore them. 1.1.0 receivers without the change ignore them too — visual fidelity degrades gracefully, no breakage.
+
+**Trade-offs** :
+- Schema surface grows by ~5 optional fields. Acceptable cost for the fidelity payoff.
+- `pathData` and `paths` create two ways to express the single-path case. The shorthand pays for itself in compact bundle output and 1.0 back-compat.
+- Authoring tools that already wrote `metadata.figma.*` need a migration. Soft transition : 1.1.x readers SHOULD honour the metadata as a fallback ; hard removal at 2.0.
+
+Cross-link : RFC issue + spec PR on `lumencast-protocol`. Conformance fixtures `bundle-universal-position-validates`, `bundle-shape-multipath-validates`, `bundle-frame-clipscontent-validates` (all `recommended`).
+
+---
+
 ## Adding a decision
 
 Open a PR appending an entry. Format :

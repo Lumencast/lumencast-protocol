@@ -426,6 +426,7 @@
         "animate": { "$ref": "#/$defs/AnimateDirective" },
         "keyframes": { "$ref": "#/$defs/Keyframes" },
         "ariaLabel": { "type": "string" },
+        "position": { "$ref": "#/$defs/Position", "description": "(1.1+) Universal prop ; honoured when the parent is in absolute mode." },
         "visible": { "type": "boolean" },
         "sizing": { "$ref": "#/$defs/Sizing" },
         "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
@@ -472,6 +473,7 @@
         "animate": { "$ref": "#/$defs/AnimateDirective" },
         "keyframes": { "$ref": "#/$defs/Keyframes" },
         "ariaLabel": { "type": "string" },
+        "position": { "$ref": "#/$defs/Position", "description": "(1.1+) Universal prop ; honoured when the parent is in absolute mode." },
         "visible": { "type": "boolean" },
         "sizing": { "$ref": "#/$defs/Sizing" },
         "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
@@ -488,6 +490,10 @@
         "kind": { "const": "frame" },
         "size": { "$ref": "#/$defs/Size" },
         "position": { "$ref": "#/$defs/Position" },
+        "clipsContent": {
+          "type": "boolean",
+          "description": "(1.1+) Clip children that overflow the declared size. Default true."
+        },
         "background": { "$ref": "#/$defs/Color" },
         "backgrounds": {
           "type": "array",
@@ -533,6 +539,7 @@
         "keyframes": { "$ref": "#/$defs/Keyframes" },
         "ariaLabel": { "type": "string" },
         "role": { "type": "string", "enum": ["heading", "paragraph", "label", "presentation"] },
+        "position": { "$ref": "#/$defs/Position", "description": "(1.1+) Universal prop ; honoured when the parent is in absolute mode." },
         "visible": { "type": "boolean" },
         "sizing": { "$ref": "#/$defs/Sizing" },
         "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
@@ -561,6 +568,7 @@
         "fit": { "type": "string", "enum": ["contain", "cover", "fill", "none"] },
         "animate": { "$ref": "#/$defs/AnimateDirective" },
         "keyframes": { "$ref": "#/$defs/Keyframes" },
+        "position": { "$ref": "#/$defs/Position", "description": "(1.1+) Universal prop ; same as the legacy image.position field, kept here for clarity." },
         "visible": { "type": "boolean" },
         "sizing": { "$ref": "#/$defs/Sizing" },
         "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
@@ -579,7 +587,25 @@
         "size": { "$ref": "#/$defs/Size" },
         "pathData": {
           "type": "string",
-          "description": "SVG path 'd' attribute syntax. Required when geometry === 'path'."
+          "description": "Single-path shorthand. Required when geometry === 'path' and `paths` is absent. SVG path 'd' attribute syntax. Mutually exclusive with `paths`."
+        },
+        "paths": {
+          "type": "array",
+          "description": "(1.1+) Multi-subpath geometry. Required when geometry === 'path' and `pathData` is absent. Each entry has its own winding rule. Mutually exclusive with `pathData`.",
+          "items": {
+            "type": "object",
+            "required": ["data"],
+            "additionalProperties": false,
+            "properties": {
+              "data": { "type": "string", "description": "SVG path 'd' attribute syntax." },
+              "windingRule": {
+                "type": "string",
+                "enum": ["NONZERO", "EVENODD"],
+                "description": "Default NONZERO when omitted."
+              }
+            }
+          },
+          "minItems": 1
         },
         "fill": { "$ref": "#/$defs/Color" },
         "fills": {
@@ -598,6 +624,7 @@
         "bind": { "$ref": "#/$defs/BindMap" },
         "animate": { "$ref": "#/$defs/AnimateDirective" },
         "keyframes": { "$ref": "#/$defs/Keyframes" },
+        "position": { "$ref": "#/$defs/Position", "description": "(1.1+) Universal prop ; honoured when the parent is in absolute mode." },
         "visible": { "type": "boolean" },
         "sizing": { "$ref": "#/$defs/Sizing" },
         "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
@@ -607,7 +634,12 @@
       "allOf": [
         {
           "if": { "properties": { "geometry": { "const": "path" } } },
-          "then": { "required": ["pathData"] }
+          "then": {
+            "oneOf": [
+              { "required": ["pathData"] },
+              { "required": ["paths"] }
+            ]
+          }
         },
         {
           "if": {
@@ -622,6 +654,10 @@
         {
           "description": "stroke and strokes are mutually exclusive.",
           "not": { "required": ["stroke", "strokes"] }
+        },
+        {
+          "description": "(1.1+) pathData and paths are mutually exclusive.",
+          "not": { "required": ["pathData", "paths"] }
         }
       ]
     },
@@ -656,6 +692,7 @@
         "ariaLabel": { "type": "string" },
         "animate": { "$ref": "#/$defs/AnimateDirective" },
         "keyframes": { "$ref": "#/$defs/Keyframes" },
+        "position": { "$ref": "#/$defs/Position", "description": "(1.1+) Universal prop ; honoured when the parent is in absolute mode." },
         "visible": { "type": "boolean" },
         "sizing": { "$ref": "#/$defs/Sizing" },
         "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
