@@ -47,6 +47,43 @@ jobs:
           done < <(find . -type f -name '*.json' -not -path './node_modules/*' -print0)
           exit "$fail"
 
+  schema-meta-validate:
+    name: Schema meta-validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install jsonschema
+        run: pip install --upgrade pip 'jsonschema>=4.18'
+      - name: Meta-validate every JSON Schema against draft-2020-12
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          from pathlib import Path
+          import jsonschema
+          fail = 0
+          targets = [
+              Path("spec/schema.json"),
+              Path("spec/schema-frames.json"),
+              *sorted(Path("spec/adapters").glob("*.json")),
+          ]
+          meta = jsonschema.Draft202012Validator.META_SCHEMA
+          for t in targets:
+              schema = json.loads(t.read_text(encoding="utf-8"))
+              errs = list(jsonschema.Draft202012Validator(meta).iter_errors(schema))
+              if errs:
+                  fail += 1
+                  print(f"  FAIL {t}: {len(errs)} meta-validation error(s)")
+                  for e in errs[:3]:
+                      print(f"    -> {e.message}")
+              else:
+                  print(f"  OK   {t}")
+          sys.exit(fail)
+          PY
+
   schema-validate-examples:
     name: LSML examples validate
     runs-on: ubuntu-latest
@@ -56,8 +93,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install jsonschema
-        run: pip install --upgrade pip jsonschema
+      - name: Install jsonschema + referencing
+        run: pip install --upgrade pip 'jsonschema>=4.18' referencing
       - name: Validate spec/examples/*.lsml against spec/schema.json
         run: python scripts/validate-bundle.py spec/examples/*.lsml
 
