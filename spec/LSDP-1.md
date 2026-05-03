@@ -1,6 +1,6 @@
 # LSDP/1 — Leaf State Delta Protocol, version 1
 
-> **Status** : 1.0.1 (errata + completeness). Backward-compatible with 1.0 ; clarifies ambiguities discovered during the multi-language SDK build, adds normative grammar / state machine / conformance partition. No semantic change to existing wire behaviour.
+> **Status** : 1.1 — additive over 1.0.1. Adds incremental resume, per-leaf animation directives, frame provenance, show-level scene transitions, ping/pong correlation, optimistic-UI input correlation, and a clean unsubscribe frame. Every addition is optional ; 1.0 receivers ignore the new fields. Subprotocol bumps to `lsdp.v1.1` (1.0 connections still negotiate `lsdp.v1`).
 >
 > **Conformance keyword convention** : the words **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, **MAY** are used as defined in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 
@@ -27,6 +27,7 @@ LSDP is the wire protocol that Lumencast servers and runtimes speak over WebSock
 15. [Conformance](#15-conformance)
 16. [LeafPath grammar](#16-leafpath-grammar)
 17. [Subscription state machine](#17-subscription-state-machine)
+18. [Incremental resume](#18-incremental-resume-11) (1.1+)
 
 ## 1. Transport
 
@@ -112,15 +113,59 @@ Incremental patches to apply to the existing state. `delta` frames MUST follow a
   "type": "delta",
   "seq": 42,
   "patches": [
-    { "path": "players.0.score", "value": 7 },
+    { "path": "players.0.score", "value": 7,
+      "transition": { "kind": "tween", "duration_ms": 200, "easing": "ease-out" } },
     { "path": "show.title", "value": "Match Point" }
-  ]
+  ],
+  "cause": { "source": "operator:user-abc", "input_id": "ui-9f3a" }
 }
 ```
 
 | Field | Required | Description |
 |---|---|---|
-| `patches` | yes | Non-empty array of `{path, value}` patches. Order matters: applied left-to-right. |
+| `patches` | yes | Non-empty array of `{path, value, transition?}` patches. Order matters: applied left-to-right. |
+| `cause` | optional (1.1+) | Provenance of this delta. See §3.2.2. |
+
+#### 3.2.2 Per-leaf transition directive (1.1+)
+
+A patch MAY carry an optional `transition` object instructing the runtime how to interpolate from the leaf's current rendered value to the new one. The shape is :
+
+```json
+{
+  "kind": "tween" | "spring" | "snap",
+  "duration_ms": <integer>,
+  "easing": "linear" | "ease-in" | "ease-out" | "ease-in-out" | "spring",
+  "stiffness": <number>,
+  "damping": <number>,
+  "mass": <number>
+}
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `kind` | yes | `tween` (time-based curve), `spring` (physics simulation), or `snap` (no interpolation, instant — useful to cancel an in-flight animation). |
+| `duration_ms` | required for `tween` | Animation duration in milliseconds. |
+| `easing` | required for `tween` | One of the listed curves. |
+| `stiffness` / `damping` / `mass` | required for `spring` | Spring physics parameters per LSML 1.0.1 §6.2 (damped harmonic oscillator). |
+
+The runtime SHOULD apply the transition only when the bound primitive's animatable property accepts the value type (numbers and CSS colors interpolate ; arbitrary strings snap). Unsupported transitions MUST degrade to instant application without raising an error.
+
+A 1.0 receiver ignores the field — the patch is applied instantly. This is forward-compatible by design.
+
+#### 3.2.3 Provenance (`cause`, 1.1+)
+
+A delta MAY carry an optional `cause` object describing what triggered the state change. It is debug- and audit-only — receivers MUST NOT use it for semantic decisions.
+
+```json
+{ "source": "operator:user-abc", "input_id": "ui-9f3a" }
+```
+
+| Field | Required | Description |
+|---|---|---|
+| `source` | yes (when cause is present) | Free-form string identifying the origin. Conventional prefixes: `operator:<user>`, `service:<name>`, `adapter:<kind>`, `system:<reason>`. |
+| `input_id` | optional | Echoes the `client_msg_id` from the originating `input` frame (§4.2), allowing optimistic-UI correlation. |
+
+A 1.0 receiver ignores the field.
 
 A single `delta` frame is atomic from the runtime's perspective — all patches MUST be applied before the runtime renders the next frame.
 
@@ -154,12 +199,41 @@ The active scene has been swapped server-side. The runtime MUST refetch the bund
   "v": 1,
   "type": "scene_changed",
   "seq": 100,
+  "from_scene_id": "main-stage",
   "scene_id": "intermission",
-  "scene_version": "sha256:def456..."
+  "scene_version": "sha256:def456...",
+  "transition": { "kind": "crossfade", "duration_ms": 600 }
 }
 ```
 
+| Field | Required | Description |
+|---|---|---|
+| `seq` | yes | Sequence (resets in the following snapshot). |
+| `scene_id` | yes | The destination scene id. |
+| `scene_version` | yes | Content hash of the destination bundle. |
+| `from_scene_id` | optional (1.1+) | The previously active scene id. Allows the runtime to render a show-level transition that needs to know both endpoints (e.g. layered crossfade). 1.0 receivers ignore. |
+| `transition` | optional (1.1+) | Show-level transition the runtime SHOULD use between the old and new scene trees. See §3.3.1. 1.0 receivers ignore — they crossfade per their default. |
+
 After a `scene_changed`, the next server frame MUST be a `snapshot` for the new scene with `seq = 1`. Any `delta` between the `scene_changed` and the `snapshot` is undefined behavior — receivers SHOULD discard.
+
+#### 3.3.1 Show-level transition spec (1.1+)
+
+The `transition` object is the same shape as the per-leaf `transition` from §3.2.2, with one additional `kind` value :
+
+```json
+{ "kind": "crossfade", "duration_ms": 600 }
+{ "kind": "tween", "duration_ms": 400, "easing": "ease-in-out" }
+{ "kind": "snap" }
+```
+
+| `kind` | Semantics |
+|---|---|
+| `crossfade` | Both trees rendered simultaneously, opacity transitions from 100% old / 0% new to 0% old / 100% new over `duration_ms`. |
+| `tween` | The runtime applies the curve to whatever continuity exists between the old and new tree (e.g. shared element transitions on matching scene_id paths). |
+| `spring` | Same as `tween` but spring physics. |
+| `snap` | No transition — the new tree replaces the old instantly. |
+
+Runtimes that do not support a given `kind` SHOULD fall back to `crossfade` (the runtime's default scene transition).
 
 ### 3.4 `error`
 
@@ -205,8 +279,12 @@ All other codes carry only the base envelope (`v / type / seq / code / message /
 Heartbeat reply. See §12.
 
 ```json
-{ "v": 1, "type": "pong" }
+{ "v": 1, "type": "pong", "nonce": "abc-9f3a" }
 ```
+
+| Field | Required | Description |
+|---|---|---|
+| `nonce` | optional (1.1+) | Echoes the `nonce` field of the matching `ping` frame (§4.3) verbatim. Lets the sender correlate the response to a specific ping when latency-probing or timing health checks. 1.0 receivers ignore. |
 
 ## 4. Frames — client to server
 
@@ -220,7 +298,8 @@ Sent immediately after WebSocket open. Identifies the client and the subscriptio
   "type": "subscribe",
   "token": "<auth-token>",
   "scene": "main-stage",
-  "session": null
+  "session": null,
+  "since_sequence": 12345
 }
 ```
 
@@ -229,8 +308,9 @@ Sent immediately after WebSocket open. Identifies the client and the subscriptio
 | `token` | yes | Opaque authentication token. Server validates and assigns role. |
 | `scene` | conditional | Required for **test mode** (subscribe to a specific scene under preview). Forbidden for **live mode** (server picks the active scene). |
 | `session` | conditional | Required for **test mode** with isolated session, forbidden otherwise. |
+| `since_sequence` | optional (1.1+) | Last `seq` the client successfully observed before disconnect. Server replies with deltas resuming from that point if its replay buffer covers the gap, otherwise with a fresh `snapshot` and the client discards its cached state. See §18 (incremental resume). 1.0 servers MUST ignore this field and always respond with `snapshot`. |
 
-Server MUST respond with either `snapshot` (success) or `error` (failure).
+Server MUST respond with either `snapshot` (success), a `delta` stream resuming from `since_sequence + 1` (success, 1.1+ only), or `error` (failure).
 
 ### 4.2 `input`
 
@@ -243,13 +323,15 @@ Mutate operator inputs. Allowed only for clients with `operator` or `service` ro
   "patches": [
     { "path": "__inputs.show_title", "value": "New title" },
     { "path": "__inputs.show_visible", "value": true }
-  ]
+  ],
+  "client_msg_id": "ui-9f3a"
 }
 ```
 
 | Field | Required | Description |
 |---|---|---|
 | `patches` | yes | Non-empty array of `{path, value}` patches |
+| `client_msg_id` | optional (1.1+) | Free-form identifier the client uses to correlate the resulting `delta` echo with the original input. The server MUST echo this value verbatim in the `cause.input_id` of the delta it produces in response (see §3.2.2). Used for optimistic UI : a client tags its own emit, then matches the echo and reconciles its predicted state against the authoritative one. 1.0 servers MUST ignore this field and emit deltas without `cause`. |
 
 Server MUST validate each patch against the active scene's `operator_inputs` declaration:
 
@@ -264,8 +346,27 @@ Successful inputs are reflected back to **all** subscribers as a `delta` (the cl
 Heartbeat. See §12.
 
 ```json
-{ "v": 1, "type": "ping" }
+{ "v": 1, "type": "ping", "nonce": "abc-9f3a" }
 ```
+
+| Field | Required | Description |
+|---|---|---|
+| `nonce` | optional (1.1+) | Free-form correlation identifier. The receiver MUST echo it verbatim in the `pong` reply (§3.5). 1.0 receivers reply with a bare `pong` and the sender treats absent-nonce as "match the most recent ping". |
+
+### 4.4 `unsubscribe` (1.1+)
+
+Clean teardown signal. The client tells the server it is done with this subscription ; the server MUST close the WebSocket within 1 second. No data flows after `unsubscribe`.
+
+```json
+{ "v": 1, "type": "unsubscribe" }
+```
+
+This frame is purely a courtesy — the WebSocket close itself is the canonical signal. `unsubscribe` exists for two reasons :
+
+1. It lets the server distinguish a clean disconnect (no auto-reconnect on the client side) from a network-level close (which may indicate a glitch worth retrying).
+2. It lets the server flush its replay buffer for that connection earlier than waiting for TCP/WebSocket close timeout.
+
+1.0 servers MUST tolerate the frame (since "ignore unknown frame types" is a 1.0 conformance rule), but they need not change their behaviour — the WebSocket close that follows is the actual teardown signal.
 
 ## 5. Sequencing
 
@@ -660,6 +761,42 @@ The lifecycle of a single subscription on a single WebSocket connection is :
 | Live | dispose() | Closed |
 | Reconnecting | backoff elapsed | Connecting |
 | Reconnecting | dispose() | Closed |
+
+---
+
+## 18. Incremental resume (1.1+)
+
+Long-lived subscriptions disconnect and reconnect frequently — network blips, mobile transitions, browser tab restoration. Without resume, every reconnect produces a fresh `snapshot` ; the client throws away its cache and re-applies the full state.
+
+LSDP/1.1 lets the client request a **resume from a known sequence point** by including `since_sequence` in its `subscribe` frame (§4.1). When the server's replay buffer covers the gap, it responds with the deltas that occurred between `since_sequence + 1` and the current sequence, instead of a fresh snapshot. The client's cached state remains valid throughout.
+
+### 18.1 Server replay buffer
+
+A 1.1 server MUST maintain a replay buffer per active scene. The buffer SHOULD hold at least the last 256 deltas (or 60 seconds of activity, whichever is more recent). Implementations MAY make this configurable.
+
+When the buffer cannot satisfy a `since_sequence` request (because the requested seq is older than the buffer's earliest entry), the server MUST fall back to a fresh `snapshot(seq=current)` and the client MUST discard its cached state.
+
+A 1.0 server has no buffer and MUST ignore `since_sequence`, replying with a fresh `snapshot` per the original 1.0 contract.
+
+### 18.2 Client expectations
+
+A client requesting resume :
+
+1. Sends `subscribe { token, since_sequence: <last_seen> }`
+2. Receives EITHER :
+   - A stream of `delta` frames starting at `seq = since_sequence + 1`, in order. The client applies each in turn.
+   - A `snapshot { seq: <current> }`. The client throws away its cache and rebases.
+3. Continues normally.
+
+If the negotiated subprotocol is `lsdp.v1` (1.0), the client MUST NOT send `since_sequence` — it would be silently dropped, but per §13.2 a client and server agreed on `lsdp.v1` MUST NOT use 1.1 features.
+
+### 18.3 Scene change during disconnect
+
+If the active scene changed while the client was disconnected, the server MUST emit `scene_changed` followed by `snapshot(seq=1)` regardless of the `since_sequence` request. The client cannot resume across a scene boundary — the bundle changed.
+
+### 18.4 Bounded replay
+
+The replay buffer is bounded. Servers MUST NOT honour requests for a `since_sequence` older than what the buffer holds — they fall back to fresh snapshot. This prevents denial-of-service via crafted "I disconnected hours ago" requests : the server's buffer has its own cap, and exceeding it is a fresh-snapshot path with the same cost as a normal reconnect.
 
 ---
 
