@@ -58,8 +58,8 @@ jobs:
           python-version: "3.12"
       - name: Install jsonschema
         run: pip install --upgrade pip jsonschema
-      - name: Validate spec/examples/*.lsml.json against spec/schema.json
-        run: python scripts/validate-bundle.py spec/examples/*.lsml.json
+      - name: Validate spec/examples/*.lsml against spec/schema.json
+        run: python scripts/validate-bundle.py spec/examples/*.lsml
 
   link-check:
     name: Internal link check
