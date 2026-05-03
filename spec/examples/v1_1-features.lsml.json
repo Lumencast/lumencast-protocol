@@ -1,0 +1,144 @@
+{
+  "lsml": "1.1",
+  "scene_id": "v1_1-features",
+  "scene_version": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "metadata": {
+    "description": "Exercises every LSML 1.1 additive feature : instance primitive, universal props (visible/sizing/opacity/rotation), multi-fill + gradients (shape.fills, frame.backgrounds), stack wrap + crossGap, animation extensions (keyframes, stagger), and the §17 profiles + x-vendor escape hatches.",
+    "x-acme.editor_locked": false
+  },
+  "profiles": ["x-lumencast.color-srgb-1.0"],
+  "layout": {
+    "kind": "frame",
+    "size": { "w": 1920, "h": 1080 },
+    "backgrounds": [
+      {
+        "kind": "linear-gradient",
+        "angle_deg": 180,
+        "stops": [
+          { "offset": 0, "color": "#1a1a2e" },
+          { "offset": 1, "color": "#000000" }
+        ]
+      }
+    ],
+    "opacity": 1,
+    "visible": true,
+    "children": [
+      {
+        "kind": "stack",
+        "direction": "horizontal",
+        "wrap": true,
+        "gap": 12,
+        "crossGap": 12,
+        "padding": 32,
+        "sizing": { "x": "fill", "y": "fill" },
+        "children": [
+          {
+            "kind": "shape",
+            "geometry": "rect",
+            "size": { "w": 200, "h": 50 },
+            "cornerRadius": 8,
+            "fills": [
+              {
+                "kind": "linear-gradient",
+                "angle_deg": 90,
+                "stops": [
+                  { "offset": 0, "color": "#ff7e00" },
+                  { "offset": 1, "color": "#ff1a3d" }
+                ]
+              },
+              { "kind": "solid", "color": "#00000033" }
+            ],
+            "strokes": [
+              { "color": "#ffffff", "width": 1 }
+            ],
+            "rotation": 0,
+            "opacity": 0.95,
+            "keyframes": {
+              "key": "ui.modal.open",
+              "duration_ms": 600,
+              "easing": "ease-out",
+              "steps": [
+                { "at": 0,    "transform": { "scale": 0.8 }, "opacity": 0 },
+                { "at": 0.6,  "transform": { "scale": 1.05 }, "opacity": 1 },
+                { "at": 1,    "transform": { "scale": 1 } }
+              ]
+            }
+          },
+          {
+            "kind": "shape",
+            "geometry": "circle",
+            "size": { "w": 80, "h": 80 },
+            "fills": [
+              {
+                "kind": "radial-gradient",
+                "center": { "x": 0.5, "y": 0.5 },
+                "radius": 0.5,
+                "stops": [
+                  { "offset": 0, "color": "#ffffff" },
+                  { "offset": 1, "color": "#000000" }
+                ]
+              }
+            ],
+            "bindUniversal": {
+              "visible": "ui.show_logo",
+              "opacity": "ui.fade_amount"
+            }
+          },
+          {
+            "kind": "instance",
+            "scene_id": "scoreboard-template",
+            "scene_version": "sha256:c4b9c4b9c4b9c4b9c4b9c4b9c4b9c4b9c4b9c4b9c4b9c4b9c4b9c4b9c4b9c4b9",
+            "params": {
+              "team_a": "Alpha",
+              "score_a": 14
+            },
+            "bindParams": {
+              "score_b": "match.score_b"
+            },
+            "fit": "contain",
+            "size": { "w": 600, "h": 200 }
+          },
+          {
+            "kind": "repeat",
+            "bind": { "items": "players" },
+            "scope": "player",
+            "stagger_ms": 80,
+            "template": {
+              "kind": "stack",
+              "direction": "horizontal",
+              "gap": 8,
+              "animate": {
+                "opacity": 1,
+                "transition": { "duration": 250, "easing": "ease-out" }
+              },
+              "children": [
+                {
+                  "kind": "text",
+                  "bind": { "value": "{player}.name" },
+                  "style": { "fontSize": 18, "color": "#ffffff" }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "operator_inputs": [
+    {
+      "path": "__inputs.match_state",
+      "label": "Match state",
+      "type": "enum",
+      "constraints": { "values": ["pre", "live", "post"] },
+      "writable_by": ["operator"],
+      "default": "pre"
+    }
+  ],
+  "defaults": {
+    "ui.show_logo": true,
+    "ui.fade_amount": 1,
+    "ui.modal.open": "closed",
+    "match.score_b": 12,
+    "players": []
+  }
+}
