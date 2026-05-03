@@ -285,7 +285,7 @@ The runtime MUST track the last `seq` it observed. If the runtime receives a fra
 
 The runtime MUST tolerate `seq <= last_seq` (a replay) by dropping the duplicate frame silently.
 
-#### 5.1 `error` frames before any `snapshot`
+### 5.1 `error` frames before any `snapshot`
 
 When the server rejects `subscribe` (e.g. `AUTH_DENIED`, `SCENE_NOT_FOUND`, `VERSION_MISMATCH`) the resulting `error` frame is emitted **before** any `snapshot`. In this case `seq = 1` (not `previous_seq + 1`, since `previous_seq = 0`). The runtime MUST accept this and MUST NOT classify it as a gap.
 
@@ -521,11 +521,11 @@ A server or client is **LSDP/1 conformant** if it passes every `tag: required` s
 
 Scenarios are partitioned into three conformance levels, mapped to RFC 2119 keywords:
 
-| Tag | Meaning | Implementation impact |
+| Tag | RFC 2119 mapping | Implementation impact |
 |---|---|---|
-| `required` | The scenario tests a **MUST** rule. Failure means the implementation is not LSDP/1-conformant and MUST NOT use the "Lumencast" name without qualification. |
-| `recommended` | The scenario tests a **SHOULD** rule. Failure does not break conformance but the implementation SHOULD document the deviation. |
-| `extended` | The scenario tests a **MAY** behaviour or a corner case. Failure is acceptable but discouraged. |
+| `required` | MUST | Failure means the implementation is not LSDP/1-conformant and MUST NOT use the "Lumencast" name without qualification. |
+| `recommended` | SHOULD | Failure does not break conformance but the implementation SHOULD document the deviation. |
+| `extended` | MAY | Failure is acceptable but discouraged ; corner cases and quality signals. |
 
 Conformance is target-scoped. A `target: server` scenario tests server behaviour ; a `target: runtime` scenario tests client/runtime behaviour ; a `target: any` scenario tests both sides on either role. An implementation claims conformance only for the targets it actually implements.
 
