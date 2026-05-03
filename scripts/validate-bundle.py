@@ -23,23 +23,45 @@ from pathlib import Path
 
 try:
     import jsonschema
+    from referencing import Registry, Resource
+    from referencing.jsonschema import DRAFT202012
 except ImportError:
     sys.stderr.write(
-        "error: jsonschema not installed. Install with: pip install jsonschema\n"
+        "error: jsonschema/referencing not installed. "
+        "Install with: pip install 'jsonschema>=4.18' referencing\n"
     )
     sys.exit(2)
 
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_PATH = ROOT / "spec" / "schema.json"
+ADAPTERS_DIR = ROOT / "spec" / "adapters"
+
+
+def _build_registry() -> Registry:
+    """Pre-load every spec/adapters/*.json under its `$id` so AdapterDecl
+    `$ref` resolution succeeds offline (LSML §9.1 enforcement)."""
+    registry: Registry = Registry()
+    for adapter_file in sorted(ADAPTERS_DIR.glob("*.json")):
+        schema = json.loads(adapter_file.read_text(encoding="utf-8"))
+        ref_id = schema.get("$id")
+        if not ref_id:
+            sys.stderr.write(
+                f"warning: {adapter_file} has no $id, skipping\n"
+            )
+            continue
+        resource = Resource.from_contents(schema, default_specification=DRAFT202012)
+        registry = registry.with_resource(uri=ref_id, resource=resource)
+    return registry
 
 
 def main(args: list[str]) -> int:
     if not args:
-        sys.stderr.write(f"usage: {sys.argv[0]} <bundle.json> [...]\n")
+        sys.stderr.write(f"usage: {sys.argv[0]} <bundle.lsml> [...]\n")
         return 2
 
     schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
-    validator = jsonschema.Draft202012Validator(schema)
+    registry = _build_registry()
+    validator = jsonschema.Draft202012Validator(schema, registry=registry)
 
     failures = 0
     for arg in args:

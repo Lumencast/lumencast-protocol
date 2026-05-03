@@ -824,21 +824,14 @@
     },
 
     "AdapterDecl": {
-      "type": "object",
-      "required": ["kind", "writes_to"],
-      "additionalProperties": true,
-      "description": "Generic envelope. Per-kind shape is enforced by spec/adapters/<kind>.json — see LSML 1.0 §9.1.",
-      "properties": {
-        "kind": {
-          "type": "string",
-          "enum": ["http_poll", "websocket_subscribe", "pg_listen", "webhook_receive", "cron"],
-          "description": "Closed list for LSML 1.0 (§9.1). New kinds require a minor version bump."
-        },
-        "writes_to": {
-          "$ref": "#/$defs/LeafPath",
-          "description": "LeafPath prefix the adapter is allowed to write to."
-        }
-      }
+      "description": "Discriminated union over `kind`. Per-kind shape is enforced by spec/adapters/<kind>.json (LSML §9.1). Validators MUST resolve every $ref via a registry preloaded with the adapter schemas — see scripts/validate-bundle.py for the canonical wiring.",
+      "oneOf": [
+        { "$ref": "https://lumencast.dev/schema/lsml/1.0/adapters/http_poll.json" },
+        { "$ref": "https://lumencast.dev/schema/lsml/1.0/adapters/websocket_subscribe.json" },
+        { "$ref": "https://lumencast.dev/schema/lsml/1.0/adapters/pg_listen.json" },
+        { "$ref": "https://lumencast.dev/schema/lsml/1.0/adapters/webhook_receive.json" },
+        { "$ref": "https://lumencast.dev/schema/lsml/1.0/adapters/cron.json" }
+      ]
     },
 
     "Assets": {
