@@ -84,6 +84,11 @@ jobs:
       - name: Setup pnpm
         if: hashFiles('lumencast-js/pnpm-workspace.yaml') != ''
         uses: pnpm/action-setup@v4
+        with:
+          # Read pnpm version from the JS sibling's package.json. The
+          # action's default lookup is relative to the protocol repo
+          # checkout, which has no package.json.
+          package_json_file: lumencast-js/package.json
 
       - name: Build lumencast-js
         if: hashFiles('lumencast-js/pnpm-workspace.yaml') != ''

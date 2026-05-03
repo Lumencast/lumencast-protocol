@@ -66,7 +66,7 @@ The control plane spec is published. The driver scaffold is in place. Currently 
 
 | SDK | `serve-scenario` | `conformance --control-url` | In matrix |
 |---|---|---|---|
-| lumencast-go | _pending_ ([master tracker](../../briefs/roadmap.md)) | partial — `--server` works, `--control-url` pending | NO |
+| lumencast-go | _pending_ — see Lumencast briefs (out of repo) | partial — `--server` works, `--control-url` pending | NO |
 | lumencast-js | _pending_ — full chantier | _pending_ — full chantier | NO |
 | lumencast-rs | _pending_ — full chantier | _pending_ — full chantier | NO |
 
