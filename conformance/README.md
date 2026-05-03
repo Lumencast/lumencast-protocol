@@ -144,13 +144,23 @@ The runner :
 
 ## Coverage requirements
 
-To claim "LSDP/1 conformance", an implementation MUST pass all scenarios tagged `required` in `manifest.json`. Optional scenarios (`recommended`, `extended`) measure quality but are not blocking.
+To claim "LSDP/1 conformance", an implementation MUST pass every scenario tagged `required` in `manifest.json` for every target it claims to implement (`server`, `runtime`, or `any`).
 
-| Tag | Scenarios | Required for conformance |
-|---|---|---|
-| `required` | core protocol behavior, error codes, sequencing, role enforcement | yes |
-| `recommended` | reconnect timing, rate limit handling, edge cases | no, but tracked |
-| `extended` | performance budgets, large state behaviour | no |
+The tag system maps directly to the RFC 2119 keywords used in the spec :
+
+| Tag | RFC 2119 mapping | Conformance impact | Scenarios |
+|---|---|---|---|
+| `required` | MUST | Failure means the implementation is NOT LSDP/1 conformant ; the "Lumencast" name MUST NOT be used without qualification (see [LSDP-1.md §15.3](../spec/LSDP-1.md#153-naming-policy)). | Core protocol behaviour, error codes (with required `path` field for path-scoped codes per [§3.4.1](../spec/LSDP-1.md#341-per-code-extra-fields)), sequencing rules including the pre-snapshot `seq=1` clause from [§5.1](../spec/LSDP-1.md#51-error-frames-before-any-snapshot), role enforcement, atomic input rejection. |
+| `recommended` | SHOULD | Failure does not break conformance but the implementation SHOULD document the deviation. | Reconnect timing, rate-limit handling with `retry_after_ms` advice, recovery patterns, edge cases. |
+| `extended` | MAY | Failure is acceptable and discouraged but not blocking. | Performance budgets, large-state behaviour, optional metadata. |
+
+This partition is normative — it mirrors [LSDP-1.md §15.1](../spec/LSDP-1.md#151-conformance-profile-partition). When in doubt, the spec is authoritative.
+
+Conformance is **target-scoped**. A scenario with `target: server` tests server behaviour ; a scenario with `target: runtime` tests runtime/client behaviour ; a scenario with `target: any` tests both. An implementation claims conformance only for the targets it actually implements — a server-only SDK is not required to pass `target: runtime` scenarios (they're auto-skipped).
+
+### Test control plane
+
+Server implementations claiming conformance MUST expose the [test control plane](../interop/CONTROL.md). Runtime implementations claiming conformance MUST be drivable through it. The control plane is normative ; an implementation that does not honour it cannot be conformance-tested and therefore MUST NOT claim LSDP/1 conformance.
 
 ## Adding new scenarios
 
