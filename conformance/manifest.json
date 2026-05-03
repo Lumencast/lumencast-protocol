@@ -224,7 +224,7 @@
     {
       "id": "unsubscribe-closes-connection",
       "path": "v1/scenarios/unsubscribe-closes-connection.yaml",
-      "tag": "recommended",
+      "tag": "required",
       "target": "server",
       "covers": [
         "LSDP-1#4.4"

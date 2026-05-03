@@ -1,6 +1,6 @@
 name: unsubscribe-closes-connection
 description: 1.1+ After receiving an `unsubscribe` frame, the server MUST close the WebSocket within 1 second. No data flows after the frame. (LSDP/1.1 §4.4).
-tag: recommended
+tag: required
 target: server
 spec_refs:
   - LSDP-1#44-unsubscribe
