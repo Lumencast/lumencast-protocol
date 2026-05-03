@@ -1,0 +1,55 @@
+name: subscribe-since-sequence-resumes
+description: 1.1+ Client subscribes with `since_sequence`, server replies with a delta stream resuming from since_sequence+1 (no snapshot). Verifies the incremental resume contract (LSDP/1.1 §4.1, §18).
+tag: required
+target: server
+spec_refs:
+  - LSDP-1#41-subscribe
+  - LSDP-1#18-incremental-resume
+
+steps:
+  # First connection: subscribe normally, observe seq 1 (snapshot) and seq 2 (delta).
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: $ANY
+      scene_version: $ANY_HASH
+      state:
+        title: Hello
+
+  - kind: server-emits
+    frame:
+      v: 1
+      type: delta
+      seq: 2
+      patches:
+        - { path: title, value: World }
+
+  # Client disconnects, then reconnects with since_sequence=2.
+  - kind: client-action
+    action: disconnect
+
+  - kind: client-sends
+    on_connection: new
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+      since_sequence: 2
+
+  # Server's replay buffer covers seq 3, so it resumes with a delta — NOT a snapshot.
+  - kind: server-emits
+    on_connection: new
+    frame:
+      v: 1
+      type: delta
+      seq: 3
+      patches:
+        - { path: title, value: Resumed }

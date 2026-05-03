@@ -1,0 +1,76 @@
+name: delta-per-leaf-transition-directive
+description: 1.1+ Server MAY emit `delta` patches with a per-leaf `transition` directive (`tween`/`spring`/`snap`). The runtime applies the transition when interpolating the leaf to its new value. Schema-level coverage — runtime tween playback is verified separately. (LSDP/1.1 §3.2.2).
+tag: required
+target: runtime
+spec_refs:
+  - LSDP-1#322-per-leaf-transition-directive-11
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_VIEWER
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: $ANY
+      scene_version: $ANY_HASH
+      state:
+        score: 0
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: delta
+      seq: 2
+      patches:
+        - path: score
+          value: 42
+          transition:
+            kind: tween
+            duration_ms: 500
+            easing: ease-out
+
+  # Runtime accepts the transition-tagged delta and applies the new value.
+  # (Animation playback verification is out of scope for the scenario harness — it's a runtime visual contract.)
+  - kind: expect-runtime-state
+    state:
+      score: 42
+
+  # Spring transition variant.
+  - kind: server-sends
+    frame:
+      v: 1
+      type: delta
+      seq: 3
+      patches:
+        - path: score
+          value: 99
+          transition:
+            kind: spring
+            stiffness: 200
+            damping: 20
+
+  - kind: expect-runtime-state
+    state:
+      score: 99
+
+  # Snap transition variant (no animation, immediate).
+  - kind: server-sends
+    frame:
+      v: 1
+      type: delta
+      seq: 4
+      patches:
+        - path: score
+          value: 0
+          transition:
+            kind: snap
+
+  - kind: expect-runtime-state
+    state:
+      score: 0

@@ -1,0 +1,52 @@
+name: delta-cause-debug-only
+description: 1.1+ A `delta` MAY carry a `cause` object describing what triggered the state change. Receivers MUST NOT use it for semantic decisions — it is debug- and audit-only. Verifies the runtime accepts and ignores `cause`. (LSDP/1.1 §3.2.3).
+tag: required
+target: runtime
+spec_refs:
+  - LSDP-1#323-provenance-cause-11
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_VIEWER
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: $ANY
+      scene_version: $ANY_HASH
+      state:
+        title: original
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: delta
+      seq: 2
+      patches:
+        - { path: title, value: from-operator }
+      cause:
+        source: "operator:user-abc"
+        input_id: "ui-9f3a"
+
+  - kind: expect-runtime-state
+    state:
+      title: from-operator
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: delta
+      seq: 3
+      patches:
+        - { path: title, value: from-adapter }
+      cause:
+        source: "adapter:http_poll"
+
+  - kind: expect-runtime-state
+    state:
+      title: from-adapter

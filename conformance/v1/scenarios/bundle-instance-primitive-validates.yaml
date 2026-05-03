@@ -1,0 +1,42 @@
+name: bundle-instance-primitive-validates
+description: LSML 1.1+ A bundle using the `instance` primitive (composite-instance reuse) is structurally valid. The instance carries `scene_id`, `scene_version`, optional `params` / `bindParams`. Schema-level coverage. (LSML 1.1 §4.9).
+tag: required
+target: server
+spec_refs:
+  - LSML-1#49-instance-11
+
+bundles:
+  - id: composite-bundle
+    inline:
+      $schema: https://lumencast.dev/schema/lsml/1.1/schema.json
+      lsml: "1.1"
+      scene_id: composite
+      scene_version: sha256:c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0
+      layout:
+        kind: frame
+        size: { w: 1920, h: 1080 }
+        children:
+          - kind: instance
+            scene_id: scoreboard-template
+            scene_version: sha256:5050505050505050505050505050505050505050505050505050505050505050
+            params:
+              team_a: Alpha
+              score_a: 14
+            fit: contain
+            size: { w: 600, h: 200 }
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: composite
+      scene_version: $ANY_HASH
+      state: $ANY

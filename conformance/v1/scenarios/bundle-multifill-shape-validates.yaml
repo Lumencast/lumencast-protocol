@@ -1,0 +1,55 @@
+name: bundle-multifill-shape-validates
+description: LSML 1.1+ A bundle using `shape.fills[]` with linear/radial gradients is structurally valid. Each fill is a discriminated union (`solid`/`linear-gradient`/`radial-gradient`) with stops. Schema-level coverage. (LSML 1.1 §4.6, §4.12).
+tag: required
+target: server
+spec_refs:
+  - LSML-1#412-fill-spec
+  - LSML-1#46-shape
+
+bundles:
+  - id: gradient-bundle
+    inline:
+      $schema: https://lumencast.dev/schema/lsml/1.1/schema.json
+      lsml: "1.1"
+      scene_id: gradient
+      scene_version: sha256:9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b
+      layout:
+        kind: frame
+        size: { w: 800, h: 600 }
+        backgrounds:
+          - kind: linear-gradient
+            angle_deg: 180
+            stops:
+              - { offset: 0, color: "#1a1a2e" }
+              - { offset: 1, color: "#000000" }
+        children:
+          - kind: shape
+            geometry: rect
+            size: { w: 200, h: 50 }
+            cornerRadius: 8
+            fills:
+              - kind: linear-gradient
+                angle_deg: 90
+                stops:
+                  - { offset: 0, color: "#ff7e00" }
+                  - { offset: 1, color: "#ff1a3d" }
+              - kind: solid
+                color: "#00000033"
+            strokes:
+              - { color: "#ffffff", width: 1 }
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: gradient
+      scene_version: $ANY_HASH
+      state: $ANY

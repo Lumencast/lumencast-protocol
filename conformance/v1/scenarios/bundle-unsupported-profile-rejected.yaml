@@ -1,0 +1,39 @@
+name: bundle-unsupported-profile-rejected
+description: LSML 1.1+ A bundle declaring `profiles[]` with an entry the runtime does not support MUST be rejected with `BUNDLE_INCOMPATIBLE`. The author signaled this is a hard requirement. (LSML 1.1 §17.3.1).
+tag: required
+target: runtime
+spec_refs:
+  - LSML-1#173-profiles-11
+  - ERROR-CODES#bundle_incompatible
+
+bundles:
+  - id: profile-bundle
+    inline:
+      $schema: https://lumencast.dev/schema/lsml/1.1/schema.json
+      lsml: "1.1"
+      scene_id: profile-test
+      scene_version: sha256:fefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefe
+      profiles:
+        - "x-acme.broadcast-1.0"
+        - "x-totally-fictional.unsupported-99.0"
+      layout:
+        kind: frame
+        size: { w: 100, h: 100 }
+        children: []
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  # Runtime fetches the bundle, sees an unsupported profile, rejects.
+  - kind: server-sends
+    frame:
+      v: 1
+      type: error
+      seq: 1
+      code: BUNDLE_INCOMPATIBLE
+      message: $ANY
+      recoverable: false
