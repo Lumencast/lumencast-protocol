@@ -65,7 +65,7 @@ end
 
 ### Lumencast version
 
-**Scene bundle (`scoreboard.lsml.json`)** — authored once :
+**Scene bundle (`scoreboard.lsml`)** — authored once :
 
 ```json
 {
@@ -135,7 +135,7 @@ end
 import { Server } from "@lumencast/server";
 import { readFileSync } from "node:fs";
 
-const bundle = JSON.parse(readFileSync("./scoreboard.lsml.json", "utf-8"));
+const bundle = JSON.parse(readFileSync("./scoreboard.lsml", "utf-8"));
 
 const srv = Server.create({
   listen: ":4000",

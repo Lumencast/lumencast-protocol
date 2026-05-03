@@ -374,8 +374,29 @@
         { "$ref": "#/$defs/ShapeNode" },
         { "$ref": "#/$defs/MediaNode" },
         { "$ref": "#/$defs/RepeatNode" },
-        { "$ref": "#/$defs/InstanceNode" }
+        { "$ref": "#/$defs/InstanceNode" },
+        { "$ref": "#/$defs/VendorPrimitiveNode" }
       ]
+    },
+
+    "VendorPrimitiveNode": {
+      "description": "(1.1+ §17.1) Vendor-prefixed primitive. `kind` MUST match `x-<vendor>.<name>` per §17.1.1. Schema validation accepts the structure ; runtime support is the consumer's contract. Universal props (§5.4) are accepted unprefixed.",
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": true,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "pattern": "^x-[a-z][a-z0-9_-]*\\.[a-z][a-z0-9_-]*$"
+        },
+        "visible": { "type": "boolean" },
+        "sizing": { "$ref": "#/$defs/Sizing" },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "rotation": { "type": "number" },
+        "bindUniversal": { "$ref": "#/$defs/BindUniversalMap" },
+        "animate": { "$ref": "#/$defs/AnimateDirective" },
+        "keyframes": { "$ref": "#/$defs/Keyframes" }
+      }
     },
 
     "StackNode": {
@@ -824,14 +845,29 @@
     },
 
     "AdapterDecl": {
-      "description": "Discriminated union over `kind`. Per-kind shape is enforced by spec/adapters/<kind>.json (LSML §9.1). Validators MUST resolve every $ref via a registry preloaded with the adapter schemas — see scripts/validate-bundle.py for the canonical wiring.",
+      "description": "Discriminated union over `kind`. Per-kind shape for the 5 standard kinds is enforced by spec/adapters/<kind>.json (LSML §9.1). Vendor-prefixed kinds (§17.2) are accepted with arbitrary additional properties — the vendor's own schema is the contract. Validators MUST resolve every $ref via a registry preloaded with the adapter schemas — see scripts/validate-bundle.py for the canonical wiring.",
       "oneOf": [
         { "$ref": "https://lumencast.dev/schema/lsml/1.0/adapters/http_poll.json" },
         { "$ref": "https://lumencast.dev/schema/lsml/1.0/adapters/websocket_subscribe.json" },
         { "$ref": "https://lumencast.dev/schema/lsml/1.0/adapters/pg_listen.json" },
         { "$ref": "https://lumencast.dev/schema/lsml/1.0/adapters/webhook_receive.json" },
-        { "$ref": "https://lumencast.dev/schema/lsml/1.0/adapters/cron.json" }
+        { "$ref": "https://lumencast.dev/schema/lsml/1.0/adapters/cron.json" },
+        { "$ref": "#/$defs/VendorAdapterDecl" }
       ]
+    },
+
+    "VendorAdapterDecl": {
+      "description": "(1.1+ §17.2) Vendor-prefixed adapter. `kind` MUST match `x-<vendor>.<name>`. `writes_to` is required (same constraint as standard adapters).",
+      "type": "object",
+      "required": ["kind", "writes_to"],
+      "additionalProperties": true,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "pattern": "^x-[a-z][a-z0-9_-]*\\.[a-z][a-z0-9_-]*$"
+        },
+        "writes_to": { "$ref": "#/$defs/LeafPath" }
+      }
     },
 
     "Assets": {

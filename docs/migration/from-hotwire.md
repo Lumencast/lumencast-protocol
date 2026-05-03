@@ -114,7 +114,7 @@ end
 ```ruby
 require "lumencast"
 
-bundle = JSON.parse(File.read("./notifications.lsml.json"))
+bundle = JSON.parse(File.read("./notifications.lsml"))
 server = Lumencast::Server.new(
   listen: ":4000",
   bundle: bundle,

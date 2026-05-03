@@ -257,7 +257,7 @@ Reference a bundle stored under `conformance/v1/bundles/`. Useful for shared bun
 ```yaml
 bundles:
   - id: minimal-scoreboard
-    path: ../bundles/minimal-scoreboard.lsml.json
+    path: ../bundles/minimal-scoreboard.lsml
 ```
 
 ### Resolution
@@ -319,7 +319,7 @@ Scenarios that exercise scene loading reference test bundles by path :
 
 bundles:
   - id: minimal-scoreboard
-    path: ../bundles/minimal-scoreboard.lsml.json
+    path: ../bundles/minimal-scoreboard.lsml
 ```
 
 `$BUNDLE.<id>.hash` resolves to the sha256 of the named bundle. The runner pre-computes these.

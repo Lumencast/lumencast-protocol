@@ -1,0 +1,127 @@
+{
+  "$schema": "https://lumencast.dev/schema/lsml/1.1/schema.json",
+  "lsml": "1.1",
+  "scene_id": "extensions-showcase",
+  "scene_version": "sha256:e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0",
+  "metadata": {
+    "author": "Lumencast",
+    "description": "Reference bundle exercising every §17 extension mechanism and every previously-uncovered top-level field. Used as a non-trivial coverage example in the schema test suite.",
+    "tags": ["reference", "extensions", "test"],
+    "x-acme.editor_locked_layers": ["sponsor-overlay"],
+    "x-acme.thumbnail_seed": 42,
+    "x-zab.scene_template_id": "broadcast-default"
+  },
+  "profiles": [
+    "x-lumencast.color-srgb-1.0",
+    "x-acme.broadcast-1.0"
+  ],
+  "layout": {
+    "kind": "frame",
+    "size": { "w": 1920, "h": 1080 },
+    "background": "#0b0b14",
+    "children": [
+      {
+        "kind": "stack",
+        "direction": "vertical",
+        "gap": 16,
+        "padding": 32,
+        "children": [
+          {
+            "kind": "text",
+            "bind": { "value": "title" },
+            "style": { "fontSize": 56, "color": "#ffffff", "fontWeight": 700 }
+          },
+          {
+            "kind": "x-acme.heatmap",
+            "data_path": "metrics.matrix",
+            "colormap": "viridis",
+            "x-acme.refresh_ms": 100,
+            "x-acme.smoothing": "bilinear"
+          },
+          {
+            "kind": "x-zab.live-graph",
+            "binding_id": "trade-feed-001",
+            "x-zab.refresh_ms": 50,
+            "x-zab.window_seconds": 60
+          },
+          {
+            "kind": "instance",
+            "scene_id": "sponsor-overlay",
+            "scene_version": "sha256:5050505050505050505050505050505050505050505050505050505050505050",
+            "params": {
+              "logo_url": "https://cdn.example.com/sponsor.png",
+              "duration_ms": 5000
+            },
+            "fit": "contain",
+            "position": { "x": 1500, "y": 980 },
+            "size": { "w": 400, "h": 80 }
+          }
+        ]
+      }
+    ]
+  },
+  "operator_inputs": [
+    {
+      "path": "__inputs.title",
+      "label": "Show title",
+      "type": "string",
+      "constraints": { "minLength": 1, "maxLength": 80 },
+      "writable_by": ["operator"],
+      "default": "Live demo"
+    }
+  ],
+  "external_adapters": [
+    {
+      "kind": "http_poll",
+      "url": "https://metrics.example.com/api/heatmap",
+      "writes_to": "metrics",
+      "interval_ms": 1000,
+      "merge_strategy": "merge",
+      "timeout_ms": 3000
+    },
+    {
+      "kind": "websocket_subscribe",
+      "url": "wss://feeds.example.com/trades",
+      "writes_to": "trades"
+    },
+    {
+      "kind": "x-acme.kafka_consume",
+      "writes_to": "events",
+      "x-acme.topic": "broadcast.events",
+      "x-acme.consumer_group": "lumencast-renderer-1"
+    }
+  ],
+  "defaults": {
+    "title": "Live demo",
+    "metrics.matrix": [],
+    "trades": [],
+    "events": []
+  },
+  "assets": {
+    "allowedHosts": ["cdn.example.com", "metrics.example.com", "feeds.example.com"],
+    "fonts": [
+      {
+        "family": "Inter",
+        "url": "https://cdn.example.com/fonts/inter.woff2",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "weight": 400,
+        "style": "normal"
+      }
+    ],
+    "preload": [
+      "https://cdn.example.com/sponsor.png",
+      "sha256:5050505050505050505050505050505050505050505050505050505050505050"
+    ]
+  },
+  "i18n": {
+    "default_locale": "en-US",
+    "locales": {
+      "en-US": {
+        "show_title": "Live demo"
+      },
+      "fr-FR": {
+        "show_title": "Démonstration en direct"
+      }
+    }
+  }
+}

@@ -4,8 +4,9 @@
 > A wire protocol, a typed schema, and a multi-runtime client kit — Apache 2.0, multi-language, broadcast-grade and IoT-grade.
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Spec: LSDP/1](https://img.shields.io/badge/Protocol-LSDP%2F1-orange.svg)](spec/LSDP-1.md)
-[![Format: LSML 1.0](https://img.shields.io/badge/Format-LSML%201.0-purple.svg)](spec/LSML-1.md)
+[![Spec: LSDP/1.1](https://img.shields.io/badge/Protocol-LSDP%2F1.1-orange.svg)](spec/LSDP-1.md)
+[![Format: LSML 1.1](https://img.shields.io/badge/Format-LSML%201.1-purple.svg)](spec/LSML-1.md)
+[![File extension: .lsml](https://img.shields.io/badge/Extension-.lsml-green.svg)](spec/LSML-1.md#18-on-disk-format)
 
 ---
 
@@ -15,8 +16,8 @@ A serveur authoritatif détient un état temps-réel. Il doit le **pousser** à 
 
 Lumencast est le **kernel commun** de ce pattern :
 
-- **LSDP/1** — *Leaf State Delta Protocol* — un protocole WebSocket qui pousse de l'état au niveau de la feuille (`path → value`), avec snapshot+delta sequenced, gap detection, reconnect schedule, et token rotation.
-- **LSML 1.0** — *Lumencast Scene Markup Language* — un format JSON content-addressé décrivant un arbre de primitives fermées (`stack`, `grid`, `frame`, `text`, `image`, `shape`, `media`, `repeat`) avec bindings, animations encadrées, et metadata d'inputs opérateur.
+- **LSDP/1.1** — *Leaf State Delta Protocol* — un protocole WebSocket qui pousse de l'état au niveau de la feuille (`path → value`), avec snapshot+delta sequenced, gap detection, reconnect schedule, token rotation, et incremental resume via `since_sequence`.
+- **LSML 1.1** — *Lumencast Scene Markup Language* — un format JSON content-addressé (extension `.lsml`, MIME `application/lsml+json`) décrivant un arbre de **9 primitives fermées** (`stack`, `grid`, `frame`, `text`, `image`, `shape`, `media`, `repeat`, `instance`) avec universal props, multi-fill / gradients, bindings, animations encadrées (transform / opacity / filter / color / keyframes / stagger), et 5 mécanismes d'extension cadrés (composition, `x-vendor.*` primitives + adapters, `profiles[]`, `metadata`).
 - **Multi-runtime** — implémentations clientes en TypeScript (browser), bientôt Vue, Svelte, Flutter, TUI.
 - **Multi-langage server SDK** — TypeScript / Go / Rust / Python en wave 1, Elixir / Kotlin / .NET / Ruby en community.
 
@@ -78,30 +79,36 @@ Le bundle LSML est immuable, identifié par son hash sha256. URL de fetch : `?v=
 | | |
 |---|---|
 | **Repo** | This is the protocol + format spec. SDKs and runtimes live in sibling repos. |
-| **Spec freeze** | LSDP/1 and LSML 1.0 are **draft** — not frozen yet. Breaking changes possible until v1.0 of this repo. |
-| **Reference SDKs** | `lumencast-js` (TypeScript runtime + Node server), `lumencast-go` (Go server + CLI). Rust + Python in P2. |
-| **Conformance suite** | Golden fixtures + scenarios in `conformance/`. Reusable cross-language. |
+| **Spec freeze** | LSDP/1.1 and LSML 1.1 are **draft** — additive over 1.0.1, every 1.1 field is optional. 1.0 receivers ignore unknown 1.1 fields. Breaking changes possible until v1.0 of this repo. |
+| **Reference SDKs** | `lumencast-js` (TypeScript runtime + Node server), `lumencast-go` (Go server + CLI), `lumencast-rs` (Rust), `lumencast-py` (Python). All four at LSDP/1.0.1 today ; 1.1 alignment in flight. |
+| **Conformance suite** | 20 cross-language scenarios + 6 example bundles in `conformance/` and `spec/examples/`. CI runs the 4×4 server×harness matrix. |
+| **On-disk format** | `.lsml` extension (preferred), `application/lsml+json` MIME, `\$schema` field for IDE autocomplete. See [§18](spec/LSML-1.md#18-on-disk-format). |
 
 ## Quick links
 
-- [LSDP/1 — wire protocol spec](spec/LSDP-1.md)
-- [LSML 1.0 — scene format spec](spec/LSML-1.md)
+- [LSDP/1.1 — wire protocol spec](spec/LSDP-1.md)
+- [LSML 1.1 — scene format spec](spec/LSML-1.md)
+  - [§17 Extension mechanisms](spec/LSML-1.md#17-extension-mechanisms-11) — how to add non-trivial features without forking the format
+  - [§18 On-disk format](spec/LSML-1.md#18-on-disk-format) — `.lsml` extension, MIME, `\$schema` convention
 - [Error code taxonomy](spec/ERROR-CODES.md)
 - [Conformance suite](conformance/README.md)
+- [Migration cookbooks](docs/migration/) — porting from LiveView, Hotwire, HTMX, custom WebSocket
 - [Governance](GOVERNANCE.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 
 ## Implementations
 
-| Repo | Language | Layer | Status |
-|---|---|---|---|
-| `lumencast-protocol` (this) | spec + fixtures | 1+2 | draft |
-| `lumencast-js` | TypeScript | 1+2+3+4 | P0 |
-| `lumencast-go` | Go | 1+4 + CLI | P0 |
-| `lumencast-rs` | Rust | 1+4 | P2 |
-| `lumencast-py` | Python | 1+4 | P2 |
-| `lumencast-flutter` | Dart/Flutter | 3 (native) | P3 |
+| Repo | Language | Layer | Spec version | Status |
+|---|---|---|---|---|
+| `lumencast-protocol` (this) | spec + fixtures | 1+2 | LSDP/1.1, LSML 1.1 | draft |
+| `lumencast-js` | TypeScript | 1+2+3+4 | LSDP/1.0.1 | P0 |
+| `lumencast-go` | Go | 1+4 + CLI | LSDP/1.0.1 | P0 |
+| `lumencast-rs` | Rust | 1+4 | LSDP/1.0.1 | P2 |
+| `lumencast-py` | Python | 1+4 | LSDP/1.0.1 | P2 |
+| `lumencast-flutter` | Dart/Flutter | 3 (native) | — | P3 |
+
+The four SDKs are interop-tested against each other in a 4×4 matrix — every server pairs with every harness, in CI. SDK alignment to LSDP/1.1 + LSML 1.1 is the next chantier.
 
 (Layer numbers refer to the [architecture document](GOVERNANCE.md#architecture).)
 
