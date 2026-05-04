@@ -1,0 +1,88 @@
+name: bundle-authoring-profile-ignored
+description: "LSML 1.1+ A bundle declaring `x-figma.authoring/1` (an authoring profile) plus a per-primitive `metadata.figma.*` block validates structurally even when the runtime does not advertise support for the profile. Authoring profiles use the slash-major suffix (`/1`) and are silently ignored when unsupported, unlike rendering profiles which use a dash-version suffix and trigger BUNDLE_INCOMPATIBLE on mismatch (LSML 1.1 §17.3, §17.4)."
+tag: recommended
+target: server
+spec_refs:
+  - LSML-1#173-profiles-11
+  - LSML-1#174-the-metadata-field-universal-escape-hatch
+
+bundles:
+  - id: figma-authored-bundle
+    inline:
+      $schema: https://lumencast.dev/schema/lsml/1.1/schema.json
+      lsml: "1.1"
+      scene_id: figma-authored
+      scene_version: sha256:f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1
+      profiles:
+        - x-figma.authoring/1
+      metadata:
+        author: alice
+        x-figma.tool_version: "0.2.0"
+      layout:
+        kind: frame
+        size: { w: 1920, h: 1080 }
+        background: "#0d0d1a"
+        metadata:
+          figma:
+            layerName: "Hero scene"
+            effects:
+              - type: DROP_SHADOW
+                visible: true
+                color: { r: 0, g: 0, b: 0, a: 0.25 }
+                offset: { x: 0, y: 4 }
+                radius: 2
+                spread: 0
+                blendMode: NORMAL
+        children:
+          - kind: text
+            bind: { value: title }
+            position: { x: 80, y: 60 }
+            style:
+              fontSize: 48
+              fontWeight: 700
+              color: "#ffffff"
+              textTransform: uppercase
+            metadata:
+              figma:
+                layerName: "Title text"
+                blendMode: NORMAL
+                fontStyle: "Bold"
+                textAutoResize: HEIGHT
+          - kind: shape
+            geometry: rect
+            size: { w: 600, h: 400 }
+            position: { x: 660, y: 340 }
+            cornerRadius: 24
+            fill: "#ff7e00"
+            metadata:
+              figma:
+                layerName: "Hero card"
+                cornerRadii: [24, 24, 0, 0]
+                cornerSmoothing: 0.6
+                strokeDetails:
+                  dashPattern: [8, 4]
+                  strokeJoin: ROUND
+                  strokeAlign: INSIDE
+                blendMode: NORMAL
+                effects:
+                  - type: BACKGROUND_BLUR
+                    visible: true
+                    radius: 12
+      defaults:
+        title: "Hello"
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: figma-authored
+      scene_version: $ANY_HASH
+      state: $ANY

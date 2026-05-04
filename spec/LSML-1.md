@@ -1233,22 +1233,37 @@ A bundle MAY declare top-level `profiles: [string]` listing capability profiles 
 }
 ```
 
-Each profile is a string identifier `<vendor>.<name>-<version>`. A profile groups behaviour conventions or feature flags that go beyond strict LSML conformance — e.g. "this bundle assumes a 16:9 broadcast aspect ratio with safe-area padding", or "interpolate colors in OKLCH instead of sRGB".
+A profile groups behaviour conventions or feature flags that go beyond strict LSML conformance. There are two flavours, distinguished by the version suffix in the identifier :
+
+- **Rendering profiles** — `<vendor>.<name>-<version>` (dash + version). Hard requirements that change how primitives render. Unsupported = bundle rejected. Examples : `x-lumencast.color-oklch-1.0`, `x-acme.broadcast-1.0`.
+- **Authoring profiles** — `<vendor>.<name>/<major>` (slash + major). Soft hints that the bundle was authored by a specific tool and carries vendor-specific data under `metadata.<vendor>.*` (per §17.4). Unsupported = silently ignored ; the bundle still renders using core LSML primitives. Examples : `x-figma.authoring/1`, `x-sketch.authoring/1`.
 
 #### 17.3.1 Profile resolution
 
 - A runtime MUST publish the list of profiles it supports (typically via its `/test/health` endpoint or a vendor-specific manifest).
 - When loading a bundle, the runtime checks every entry in `profiles[]` against its supported list :
   - All supported → render normally with profile-specific behaviour
-  - At least one unsupported → MUST reject with `BUNDLE_INCOMPATIBLE` (the bundle author signaled this is a hard requirement)
+  - One or more **rendering profiles** unsupported → MUST reject with `BUNDLE_INCOMPATIBLE` (the bundle author signaled hard requirements)
+  - Only **authoring profiles** unsupported → render normally, ignoring the unknown profile entries. The `metadata.<vendor>.*` data they describe falls back to standard §17.4 behaviour (open-ended, runtime-ignored).
 
-#### 17.3.2 Standard profiles
+#### 17.3.2 Authoring profile docs
 
-LSML 1.1 defines no standard profiles. Future minor revisions or vendor specs MAY register profiles (e.g. `x-lumencast.color-oklch-1.0` to switch animation/gradient color interpolation from sRGB to OKLCH).
+Authoring profiles SHOULD ship a normative spec document under `spec/profiles/<vendor>-<surface>.md` in this repo (or in the vendor's own repo with a normative reference back here). The doc describes :
 
-#### 17.3.3 Naming
+- The exact set of `metadata.<vendor>.*` keys the profile uses.
+- Their types, defaults, and interpretation rules.
+- Round-trip stability constraints.
+- Versioning policy (additive within a major ; new major for breaking changes).
 
-Profile identifiers follow the same `x-<vendor>.<name>` convention as primitive `kind` values. The `x-lumencast.*` prefix is reserved for officially-blessed Lumencast extension profiles.
+A reference example is [`spec/profiles/figma-authoring.md`](profiles/figma-authoring.md), the Lumencast Figma plugin's authoring profile.
+
+#### 17.3.3 Standard profiles
+
+LSML 1.1 defines no standard rendering profiles. Vendor authoring profiles are documented separately under `spec/profiles/`. Future minor revisions or vendor specs MAY register additional rendering profiles (e.g. `x-lumencast.color-oklch-1.0` to switch animation/gradient color interpolation from sRGB to OKLCH).
+
+#### 17.3.4 Naming
+
+Profile identifiers follow the `x-<vendor>.<name>` convention. The version suffix discriminates the flavour (dash for rendering, slash for authoring — see §17.3 above). The `x-lumencast.*` prefix is reserved for officially-blessed Lumencast extension profiles.
 
 ### 17.4 The `metadata` field (universal escape hatch)
 
@@ -1267,6 +1282,28 @@ The top-level `metadata` field (already present in 1.0) is open-ended. Vendors M
 ```
 
 Runtimes MUST ignore `metadata` for rendering decisions — it is documentation and authoring state only. There is no naming constraint inside `metadata` (since it's purely informational), but vendor-prefixed keys are encouraged for clarity.
+
+#### 17.4.1 Per-primitive metadata (1.1+)
+
+The same open-ended `metadata` block MAY appear on any individual primitive (LSML §4.x), alongside the standard fields :
+
+```json
+{
+  "kind": "shape",
+  "geometry": "rect",
+  "size": { "w": 200, "h": 50 },
+  "fill": "#ff0000",
+  "metadata": {
+    "x-figma.layerName": "Hero card",
+    "x-figma.constraints": { "horizontal": "STRETCH", "vertical": "MIN" },
+    "x-acme.dataBindingHint": "metric.score"
+  }
+}
+```
+
+Per-primitive metadata is the canonical home for authoring-tool data that needs to travel with a specific node (positions, layer names, vendor-specific decorations). It MUST be ignored by renderers for layout / paint decisions in the same way as bundle-level metadata, except when an authoring profile (§17.3) declares semantics for specific keys.
+
+The validator's strict-schema check accepts any value type under `metadata` ; primitives MAY carry it and bundles MAY validate without the renderer knowing the keys.
 
 ### 17.5 Decision flow for extensions
 

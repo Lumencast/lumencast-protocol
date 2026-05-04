@@ -118,6 +118,33 @@ Cross-link : RFC issue + spec PR on `lumencast-protocol`. Conformance fixtures `
 
 ---
 
+## 2026-05-04 — Authoring profiles for vendor-specific data
+
+**Question** : authoring tools (Figma plugin, Sketch plugin, VSCode editor extension, …) need to round-trip a host of properties LSML 1.1 doesn't represent natively (effects, blend modes, masks, per-corner radii, gradient stop positions, layout overrides, …). Should each missing property become a spec-level field, or should we formalise a different mechanism ?
+
+**Answer** : neither. Introduce a category of *authoring profiles* that pair a `profiles[]` declaration with a `metadata.<vendor>.*` block, both already valid LSML 1.1 (§17.3 + §17.4). The first instance is `x-figma.authoring/1`, documented at `spec/profiles/figma-authoring.md`.
+
+Two profile flavours, distinguished by version-suffix syntax :
+- **Rendering profiles** (`<vendor>.<name>-<version>`, dash) — hard requirements that change rendering. Unsupported = `BUNDLE_INCOMPATIBLE`.
+- **Authoring profiles** (`<vendor>.<name>/<major>`, slash) — soft hints that the bundle carries vendor-specific data under `metadata.<vendor>.*`. Unsupported = silently ignored, falling back to LSML primitives only.
+
+The schema also gains per-primitive `metadata` (§17.4.1) so each leaf can carry its own vendor block.
+
+**Reasoning** :
+- LSML core stays minimal and portable. No bloat for adopters that don't author through Figma.
+- Vendor extensions evolve independently of the core. New Figma fidelity features ship as additions to `x-figma.authoring/1` without an LSML-level RFC.
+- Renderers compose : a Figma-aware viewer reads the metadata for full fidelity ; a portable runtime reads the primitives and degrades gracefully.
+- The pattern generalises : Sketch, Adobe XD, Penpot, VSCode's "scene preview" extension, etc. all get the same affordance with their own profile docs.
+
+**Trade-offs** :
+- Two flavours of profile (rendering vs authoring) add a learning curve. Mitigated by keeping the version-suffix syntax visually distinct (dash vs slash) and documenting the difference at §17.3.
+- Per-primitive metadata makes the schema slightly more permissive (`additionalProperties` allowed under `metadata`). Acceptable cost for the authoring-tool ecosystem.
+- Tools writing authoring profiles MUST resist the temptation to put rendering-critical data in metadata — anything that genuinely affects portable rendering still belongs in core LSML (and triggers an RFC).
+
+Cross-link : `spec/profiles/figma-authoring.md`, conformance fixture `bundle-authoring-profile-ignored`. The figma plugin (`lumencast-figma`) is the reference implementation.
+
+---
+
 ## Adding a decision
 
 Open a PR appending an entry. Format :
