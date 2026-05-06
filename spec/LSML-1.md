@@ -1429,11 +1429,29 @@ A minimal bundle saved as `hello.lsml` :
 
 Open this file in VS Code with the JSON language service active, and `$schema` resolution gives autocomplete + validation immediately, no extension needed.
 
+### 18.9 Archive form (`.lsmlz`)
+
+For workflows that benefit from a single-file artefact carrying both the bundle and its referenced assets — authoring tool exports, drag-and-drop transfers, email attachments, content-addressable cache entries — Lumencast defines a companion format **LSMLZ** : the `.lsml` JSON plus its `assets/` directory packaged into a ZIP archive.
+
+| Property | Value |
+|---|---|
+| Extension | `.lsmlz` (preferred) ; `.zip` accepted |
+| Media type | `application/lsml+zip` (RFC 6839 `+zip` suffix) |
+| Magic bytes | `50 4B 03 04` (standard ZIP) |
+| Layout | `<scene_id>.lsml` at root + `assets/<hash>.<ext>` siblings + reserved `_debug/` for authoring diagnostics |
+
+LSMLZ is **a packaging convention, not a new scene format**. The `.lsml` JSON inside the archive is byte-identical to the loose form. Unzipping reproduces an LSML §18-conformant `<scene>.lsml` + `assets/` tree, and any LSML reader can consume that result without LSMLZ-specific code.
+
+Full normative spec : **[LSMLZ-1](LSMLZ-1.md)** — container format, layout rules, reserved authoring prefixes, conformance for writers and readers, examples.
+
+A bundle conformant with this LSML spec is independently consumable as a loose `.lsml` JSON, regardless of whether it was extracted from an LSMLZ archive — this section exists only to forward producers and consumers to the right companion document.
+
 ---
 
 ## Reference
 
 - [JSON Schema for LSML 1.x](schema.json) (canonical machine-readable spec)
 - [LSDP/1 wire protocol](LSDP-1.md) (how bundles travel)
+- [LSMLZ/1 archive format](LSMLZ-1.md) (single-file ZIP packaging of bundle + assets)
 - [Error code taxonomy](ERROR-CODES.md)
 - [Conformance suite](../conformance/README.md)
