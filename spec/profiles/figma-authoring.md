@@ -3,6 +3,7 @@
 > **Status** : v1, initial publication. Additive over LSML 1.1 ; declared via the `profiles[]` mechanism (LSML §17.3) and consumed via the `metadata.figma.*` escape hatch (LSML §17.4).
 > **Identifier** : `x-figma.authoring/1`
 > **Audience** : authoring tools that import / export LSML bundles produced by a Figma plugin, and renderers that want maximum visual fidelity to the original Figma design.
+> **Generic pattern** : this profile is the canonical implementation of the **authoring profile** mechanism formalised in [LSML §17.5](../LSML-1.md#175-authoring-profiles). Every `metadata.figma.*` key listed below carries round-trip information per §17.5.1 (verbatim preservation, consistent float rounding, stable array order). Other vendors MAY model their authoring profile after this one — see §17.5.3 + the bottom-of-document "Adopting the profile from another vendor" section.
 
 ## Why a profile rather than spec extensions
 
