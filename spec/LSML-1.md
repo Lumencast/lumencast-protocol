@@ -1252,23 +1252,87 @@ Profile identifiers follow the same `x-<vendor>.<name>` convention as primitive 
 
 ### 17.4 The `metadata` field (universal escape hatch)
 
-The top-level `metadata` field (already present in 1.0) is open-ended. Vendors MAY use it for authoring information that the runtime never consumes :
+The `metadata` field (top-level on the bundle, and per-primitive when needed) is open-ended. Vendors MAY use it for authoring information that the runtime never consumes :
 
 ```json
 {
   "metadata": {
     "author": "alice",
     "tags": ["broadcast", "live"],
-    "x-acme.editor_locked_layers": ["layer-3"],
-    "x-acme.thumbnail_seed": 42,
-    "x-zab.scene_template_id": "..."
+    "acme": {
+      "editor_locked_layers": ["layer-3"],
+      "thumbnail_seed": 42
+    },
+    "zab": {
+      "scene_template_id": "..."
+    }
   }
 }
 ```
 
-Runtimes MUST ignore `metadata` for rendering decisions — it is documentation and authoring state only. There is no naming constraint inside `metadata` (since it's purely informational), but vendor-prefixed keys are encouraged for clarity.
+Runtimes MUST ignore `metadata` for rendering decisions — it is documentation and authoring state only.
 
-### 17.5 Decision flow for extensions
+Naming convention for vendor-specific keys :
+
+- A vendor SHOULD nest its keys under a single sub-object whose key is the vendor's stable lowercase identifier (`metadata.<vendor>.*`). The vendor identifier matches `[a-z][a-z0-9_-]*`.
+- The `x-` prefix used elsewhere in §17 (kind values, adapter kinds, profile identifiers, etc.) is NOT required inside `metadata` — `metadata` is itself the namespace, so `metadata.<vendor>.*` is unambiguous.
+- Top-level keys without a vendor namespace (`author`, `description`, `tags`, …) are reserved for generic authoring metadata. Vendors SHOULD NOT shadow them.
+
+Per-primitive metadata follows the same convention :
+
+```json
+{
+  "kind": "image",
+  "bind": { "src": "..." },
+  "alt": "Logo",
+  "metadata": {
+    "acme": { "constraints": { "horizontal": "SCALE", "vertical": "SCALE" } }
+  }
+}
+```
+
+The runtime ignores the per-primitive `metadata` block as well — it is round-trip-only state for authoring tools.
+
+### 17.5 Authoring profiles
+
+A common §17.3 profile flavour — used to formalise the round-trip contract between authoring tools and renderers — is an **authoring profile**.
+
+An authoring profile :
+
+- Declares a profile identifier `x-<vendor>.authoring/<major>` (e.g. `x-acme.authoring/1`).
+- Specifies which `metadata.<vendor>.*` keys an authoring tool emits, their types, and the rendering behaviour an aware consumer SHOULD reproduce.
+- Lives in `spec/profiles/<vendor>-authoring.md` in this repository, or in the vendor's own repository with a normative reference back.
+
+The mechanism stitches §17.3 (capability declaration) and §17.4 (vendor metadata) into a single contract :
+
+1. The bundle declares `profiles: ["x-<vendor>.authoring/1"]` to signal the contract.
+2. The authoring tool emits `metadata.<vendor>.*` keys per the profile.
+3. A profile-aware renderer reads those keys to reproduce source-fidelity properties (effects, blend modes, masks, custom layout flags, …) that LSML's core catalog cannot carry natively.
+4. A non-aware renderer ignores the metadata per §17.4 and renders the underlying primitives best-effort. The bundle still validates structurally.
+
+#### 17.5.1 Round-trip stability
+
+Two implementations of the same authoring profile SHOULD produce **byte-equivalent** output after canonicalisation when given the same logical input. Achieving this requires :
+
+- All `metadata.<vendor>.*` keys declared by the profile are preserved verbatim across import → export.
+- Float values are rounded consistently (the §3.1 canonicalizer's rounding applies to the whole bundle).
+- Arrays whose order matters (effects, gradient stops, gradient transforms, per-corner radii, layer ordering, …) preserve source order. The profile MUST document any array whose order is semantic.
+
+Round-trip stability is the property that makes a bundle a shareable artefact between authoring tools, enrichment editors, and renderers. Without it, every round-trip churns the canonical bytes and breaks content-addressing (§3).
+
+#### 17.5.2 Profile evolution
+
+Authoring profiles follow the same versioning pattern as §17.3 profiles :
+
+- Backward-incompatible changes bump the major (`x-<vendor>.authoring/2`).
+- Additive changes (new optional keys) keep the same identifier — readers MUST ignore unknown keys.
+- Deprecated keys SHOULD remain documented for at least one major (parallel reads) before removal, to give downstream consumers a migration window.
+
+#### 17.5.3 Cross-vendor adoption
+
+The pattern is intentionally vendor-neutral. Multiple authoring profiles MAY coexist in a single bundle's `profiles[]` (an enrichment tool that works on top of any authoring source declares the source's profile in addition to its own). Each profile's `metadata.<vendor>.*` block is independent ; the metadata namespace ensures no cross-vendor key collisions.
+
+### 17.6 Decision flow for extensions
 
 When a developer needs to add a non-trivial feature, they choose between mechanisms in this order :
 
@@ -1276,7 +1340,8 @@ When a developer needs to add a non-trivial feature, they choose between mechani
 2. **Vendor primitive** (§17.1) — is it a truly atomic visual that can't be composed ? Add an `x-<vendor>.<name>` primitive. Bundle becomes non-portable but the format is unchanged.
 3. **Vendor adapter** (§17.2) — is it server-side data plumbing that can't fit the standard 5 kinds ? Add an `x-<vendor>.<name>` adapter. Bundle stays portable on the wire, the server alone needs the plugin.
 4. **Profile** (§17.3) — is the feature a behaviour mode rather than a primitive (e.g. color space, layout convention) ? Declare a profile.
-5. **Metadata** (§17.4) — is it pure authoring state with no runtime impact ? Park it in `metadata`.
+5. **Authoring profile** (§17.5) — is the feature about round-tripping source-fidelity properties from an authoring tool that don't fit the LSML core catalog ? Declare an authoring profile and emit `metadata.<vendor>.*` per the profile contract.
+6. **Metadata** (§17.4) — is it pure ad-hoc authoring state with no profile contract and no runtime impact ? Park it in `metadata`.
 
 If none of these fit, the developer is hitting LSML's domain edge — the right move is to use LSDP for the data plane only and write a custom renderer (see §15.4 in `lumencast-protocol/briefs/` for the four-tier developer guide).
 
