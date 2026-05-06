@@ -10,8 +10,12 @@ For Lumencast to be a real standard, multiple implementations (TypeScript, Go, R
 
 ```
 conformance/
-├── manifest.json                    # Indexed catalogue of fixtures + scenarios
+├── manifest.json                    # LSDP+LSML — indexed catalogue of fixtures + scenarios
 ├── README.md                        # this file
+├── lsmlz/                           # LSMLZ/1 — file-format conformance (separate from wire-protocol)
+│   ├── README.md                    #   case file format reference
+│   ├── manifest.json                #   case index
+│   └── cases/                       #   { valid | invalid | advisory } / *.yaml
 └── v1/                              # LSDP/1 + LSML 1.0
     ├── SCENARIO-FORMAT.md           # Authoritative scenario YAML format
     ├── fixtures/                    # Byte-level golden frames

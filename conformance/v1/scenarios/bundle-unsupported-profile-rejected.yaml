@@ -1,9 +1,10 @@
 name: bundle-unsupported-profile-rejected
-description: LSML 1.1+ A bundle declaring `profiles[]` with an entry the runtime does not support MUST be rejected with `BUNDLE_INCOMPATIBLE`. The author signaled this is a hard requirement. (LSML 1.1 §17.3.1).
+description: LSML 1.1+ A bundle declaring `profiles[]` with an unsupported behavioural profile (identifier without the `.authoring/` segment) MUST be rejected with `BUNDLE_INCOMPATIBLE`. The author signaled this is a hard rendering requirement. Authoring profiles (`.authoring/<major>` suffix) are exempt — see `bundle-authoring-profile-no-rejection`. (LSML 1.1 §17.3.1, §17.5.1).
 tag: required
 target: runtime
 spec_refs:
   - LSML-1#173-profiles-11
+  - LSML-1#1751-advisory-semantics-exception-to-173
   - ERROR-CODES#bundle_incompatible
 
 bundles:
@@ -14,8 +15,8 @@ bundles:
       scene_id: profile-test
       scene_version: sha256:fefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefe
       profiles:
-        - "x-acme.broadcast-1.0"
-        - "x-totally-fictional.unsupported-99.0"
+        - "x-acme.broadcast/1.0"
+        - "x-totally-fictional.unsupported/99.0"
       layout:
         kind: frame
         size: { w: 100, h: 100 }
