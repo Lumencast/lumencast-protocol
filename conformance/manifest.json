@@ -335,6 +335,16 @@
       ]
     },
     {
+      "id": "bundle-authoring-profile-ignored",
+      "path": "v1/scenarios/bundle-authoring-profile-ignored.yaml",
+      "tag": "recommended",
+      "target": "server",
+      "covers": [
+        "LSML-1#17.3",
+        "LSML-1#17.4"
+      ]
+    },
+    {
       "id": "bundle-unsupported-profile-rejected",
       "path": "v1/scenarios/bundle-unsupported-profile-rejected.yaml",
       "tag": "required",
