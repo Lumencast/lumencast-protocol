@@ -1228,12 +1228,12 @@ A bundle MAY declare top-level `profiles: [string]` listing capability profiles 
   "lsml": "1.1",
   "scene_id": "main-stage",
   "scene_version": "sha256:...",
-  "profiles": ["x-acme.broadcast-1.0", "x-lumencast.color-oklch"],
+  "profiles": ["x-acme.broadcast/1.0", "x-lumencast.color-oklch/1"],
   "layout": { ... }
 }
 ```
 
-Each profile is a string identifier `<vendor>.<name>-<version>`. A profile groups behaviour conventions or feature flags that go beyond strict LSML conformance — e.g. "this bundle assumes a 16:9 broadcast aspect ratio with safe-area padding", or "interpolate colors in OKLCH instead of sRGB".
+Each profile is a string identifier of the form `x-<vendor>.<name>/<version>` where `<version>` is `<major>` or `<major>.<minor>`. A profile groups behaviour conventions or feature flags that go beyond strict LSML conformance — e.g. "this bundle assumes a 16:9 broadcast aspect ratio with safe-area padding", or "interpolate colors in OKLCH instead of sRGB".
 
 #### 17.3.1 Profile resolution
 
@@ -1244,11 +1244,11 @@ Each profile is a string identifier `<vendor>.<name>-<version>`. A profile group
 
 #### 17.3.2 Standard profiles
 
-LSML 1.1 defines no standard profiles. Future minor revisions or vendor specs MAY register profiles (e.g. `x-lumencast.color-oklch-1.0` to switch animation/gradient color interpolation from sRGB to OKLCH).
+LSML 1.1 defines no standard profiles. Future minor revisions or vendor specs MAY register profiles (e.g. `x-lumencast.color-oklch/1.0` to switch animation/gradient color interpolation from sRGB to OKLCH).
 
 #### 17.3.3 Naming
 
-Profile identifiers follow the same `x-<vendor>.<name>` convention as primitive `kind` values. The `x-lumencast.*` prefix is reserved for officially-blessed Lumencast extension profiles.
+Profile identifiers follow the same `x-<vendor>.<name>` convention as primitive `kind` values, suffixed with `/<version>`. The `x-lumencast.*` prefix is reserved for officially-blessed Lumencast extension profiles.
 
 ### 17.4 The `metadata` field (universal escape hatch)
 
@@ -1295,7 +1295,7 @@ The runtime ignores the per-primitive `metadata` block as well — it is round-t
 
 ### 17.5 Authoring profiles
 
-A common §17.3 profile flavour — used to formalise the round-trip contract between authoring tools and renderers — is an **authoring profile**.
+An **authoring profile** is a §17.3 profile dedicated to the round-trip contract between an authoring tool and a renderer. It exists because LSML's core primitive catalog (§4) cannot carry every source-fidelity property an authoring tool might want to preserve — effects, blend modes, masks, fine-grained layout flags, vendor-specific transforms — and §17.4 alone leaves the metadata shape unspecified.
 
 An authoring profile :
 
