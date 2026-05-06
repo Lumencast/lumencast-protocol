@@ -1228,84 +1228,121 @@ A bundle MAY declare top-level `profiles: [string]` listing capability profiles 
   "lsml": "1.1",
   "scene_id": "main-stage",
   "scene_version": "sha256:...",
-  "profiles": ["x-acme.broadcast-1.0", "x-lumencast.color-oklch"],
+  "profiles": ["x-acme.broadcast/1.0", "x-lumencast.color-oklch/1"],
   "layout": { ... }
 }
 ```
 
-A profile groups behaviour conventions or feature flags that go beyond strict LSML conformance. There are two flavours, distinguished by the version suffix in the identifier :
-
-- **Rendering profiles** — `<vendor>.<name>-<version>` (dash + version). Hard requirements that change how primitives render. Unsupported = bundle rejected. Examples : `x-lumencast.color-oklch-1.0`, `x-acme.broadcast-1.0`.
-- **Authoring profiles** — `<vendor>.<name>/<major>` (slash + major). Soft hints that the bundle was authored by a specific tool and carries vendor-specific data under `metadata.<vendor>.*` (per §17.4). Unsupported = silently ignored ; the bundle still renders using core LSML primitives. Examples : `x-figma.authoring/1`, `x-sketch.authoring/1`.
+Each profile is a string identifier of the form `x-<vendor>.<name>/<version>` where `<version>` is `<major>` or `<major>.<minor>`. A profile groups behaviour conventions or feature flags that go beyond strict LSML conformance — e.g. "this bundle assumes a 16:9 broadcast aspect ratio with safe-area padding", or "interpolate colors in OKLCH instead of sRGB".
 
 #### 17.3.1 Profile resolution
 
 - A runtime MUST publish the list of profiles it supports (typically via its `/test/health` endpoint or a vendor-specific manifest).
 - When loading a bundle, the runtime checks every entry in `profiles[]` against its supported list :
   - All supported → render normally with profile-specific behaviour
-  - One or more **rendering profiles** unsupported → MUST reject with `BUNDLE_INCOMPATIBLE` (the bundle author signaled hard requirements)
-  - Only **authoring profiles** unsupported → render normally, ignoring the unknown profile entries. The `metadata.<vendor>.*` data they describe falls back to standard §17.4 behaviour (open-ended, runtime-ignored).
+  - At least one unsupported → MUST reject with `BUNDLE_INCOMPATIBLE` (the bundle author signaled this is a hard requirement)
 
-#### 17.3.2 Authoring profile docs
+#### 17.3.2 Standard profiles
 
-Authoring profiles SHOULD ship a normative spec document under `spec/profiles/<vendor>-<surface>.md` in this repo (or in the vendor's own repo with a normative reference back here). The doc describes :
+LSML 1.1 defines no standard profiles. Future minor revisions or vendor specs MAY register profiles (e.g. `x-lumencast.color-oklch/1.0` to switch animation/gradient color interpolation from sRGB to OKLCH).
 
-- The exact set of `metadata.<vendor>.*` keys the profile uses.
-- Their types, defaults, and interpretation rules.
-- Round-trip stability constraints.
-- Versioning policy (additive within a major ; new major for breaking changes).
+#### 17.3.3 Naming
 
-A reference example is [`spec/profiles/figma-authoring.md`](profiles/figma-authoring.md), the Lumencast Figma plugin's authoring profile.
-
-#### 17.3.3 Standard profiles
-
-LSML 1.1 defines no standard rendering profiles. Vendor authoring profiles are documented separately under `spec/profiles/`. Future minor revisions or vendor specs MAY register additional rendering profiles (e.g. `x-lumencast.color-oklch-1.0` to switch animation/gradient color interpolation from sRGB to OKLCH).
-
-#### 17.3.4 Naming
-
-Profile identifiers follow the `x-<vendor>.<name>` convention. The version suffix discriminates the flavour (dash for rendering, slash for authoring — see §17.3 above). The `x-lumencast.*` prefix is reserved for officially-blessed Lumencast extension profiles.
+Profile identifiers follow the same `x-<vendor>.<name>` convention as primitive `kind` values, suffixed with `/<version>`. The `x-lumencast.*` prefix is reserved for officially-blessed Lumencast extension profiles.
 
 ### 17.4 The `metadata` field (universal escape hatch)
 
-The top-level `metadata` field (already present in 1.0) is open-ended. Vendors MAY use it for authoring information that the runtime never consumes :
+The `metadata` field (top-level on the bundle, and per-primitive when needed) is open-ended. Vendors MAY use it for authoring information that the runtime never consumes :
 
 ```json
 {
   "metadata": {
     "author": "alice",
     "tags": ["broadcast", "live"],
-    "x-acme.editor_locked_layers": ["layer-3"],
-    "x-acme.thumbnail_seed": 42,
-    "x-zab.scene_template_id": "..."
+    "acme": {
+      "editor_locked_layers": ["layer-3"],
+      "thumbnail_seed": 42
+    },
+    "zab": {
+      "scene_template_id": "..."
+    }
   }
 }
 ```
 
-Runtimes MUST ignore `metadata` for rendering decisions — it is documentation and authoring state only. There is no naming constraint inside `metadata` (since it's purely informational), but vendor-prefixed keys are encouraged for clarity.
+Runtimes MUST ignore `metadata` for rendering decisions — it is documentation and authoring state only.
 
-#### 17.4.1 Per-primitive metadata (1.1+)
+Naming convention for vendor-specific keys :
 
-The same open-ended `metadata` block MAY appear on any individual primitive (LSML §4.x), alongside the standard fields :
+- A vendor SHOULD nest its keys under a single sub-object whose key is the vendor's stable lowercase identifier (`metadata.<vendor>.*`). The vendor identifier matches `[a-z][a-z0-9_-]*`.
+- The `x-` prefix used elsewhere in §17 (kind values, adapter kinds, profile identifiers, etc.) is NOT required inside `metadata` — `metadata` is itself the namespace, so `metadata.<vendor>.*` is unambiguous.
+- Top-level keys without a vendor namespace (`author`, `description`, `tags`, …) are reserved for generic authoring metadata. Vendors SHOULD NOT shadow them.
+
+Per-primitive metadata follows the same convention :
 
 ```json
 {
-  "kind": "shape",
-  "geometry": "rect",
-  "size": { "w": 200, "h": 50 },
-  "fill": "#ff0000",
+  "kind": "image",
+  "bind": { "src": "..." },
+  "alt": "Logo",
   "metadata": {
-    "x-figma.layerName": "Hero card",
-    "x-figma.constraints": { "horizontal": "STRETCH", "vertical": "MIN" },
-    "x-acme.dataBindingHint": "metric.score"
+    "acme": { "constraints": { "horizontal": "SCALE", "vertical": "SCALE" } }
   }
 }
 ```
 
-Per-primitive metadata is the canonical home for authoring-tool data that needs to travel with a specific node (positions, layer names, vendor-specific decorations). It MUST be ignored by renderers for layout / paint decisions in the same way as bundle-level metadata, except when an authoring profile (§17.3) declares semantics for specific keys.
+The runtime ignores the per-primitive `metadata` block as well — it is round-trip-only state for authoring tools.
 
-The validator's strict-schema check accepts any value type under `metadata` ; primitives MAY carry it and bundles MAY validate without the renderer knowing the keys.
+### 17.5 Authoring profiles
 
-### 17.5 Decision flow for extensions
+An **authoring profile** is a §17.3 profile dedicated to the round-trip contract between an authoring tool and a renderer. It exists because LSML's core primitive catalog (§4) cannot carry every source-fidelity property an authoring tool might want to preserve — effects, blend modes, masks, fine-grained layout flags, vendor-specific transforms — and §17.4 alone leaves the metadata shape unspecified.
+
+An authoring profile :
+
+- Declares a profile identifier `x-<vendor>.authoring/<major>` (e.g. `x-acme.authoring/1`).
+- Specifies which `metadata.<vendor>.*` keys an authoring tool emits, their types, and the rendering behaviour an aware consumer SHOULD reproduce.
+- Lives in `spec/profiles/<vendor>-authoring.md` in this repository, or in the vendor's own repository with a normative reference back.
+
+The mechanism stitches §17.3 (capability declaration) and §17.4 (vendor metadata) into a single contract :
+
+1. The bundle declares `profiles: ["x-<vendor>.authoring/1"]` to signal the contract.
+2. The authoring tool emits `metadata.<vendor>.*` keys per the profile.
+3. A profile-aware renderer reads those keys to reproduce source-fidelity properties (effects, blend modes, masks, custom layout flags, …) that LSML's core catalog cannot carry natively.
+4. A non-aware renderer ignores the metadata per §17.4 and renders the underlying primitives best-effort. The bundle still validates structurally.
+
+#### 17.5.1 Advisory semantics — exception to §17.3
+
+§17.3 specifies that an unsupported entry in `profiles[]` MUST trigger `BUNDLE_INCOMPATIBLE` rejection. **Authoring profiles override that rule** : a renderer that does not support `x-<vendor>.authoring/<major>` MUST NOT reject the bundle, MUST NOT emit `BUNDLE_INCOMPATIBLE`, and MUST render the underlying LSML primitives as if the profile were absent.
+
+The rationale is that authoring profiles describe **enrichments** layered on top of a structurally complete LSML bundle. The bundle stays renderable without them ; the profile only adds source-fidelity that a generic renderer cannot reproduce anyway. Rejecting the bundle would be strictly worse than partial rendering.
+
+Behavioural profiles (color space, layout convention, etc. — typical §17.3 profiles) keep §17.3's rejection semantics : their absence changes the rendered result substantively. Authoring profiles do not.
+
+A renderer detects authoring profiles by the `.authoring/` segment in the identifier (i.e. `<vendor>.authoring/<major>`). Identifiers without this segment follow §17.3 strict rejection.
+
+#### 17.5.2 Round-trip stability
+
+Two implementations of the same authoring profile SHOULD produce **byte-equivalent** output after canonicalisation when given the same logical input. Achieving this requires :
+
+- All `metadata.<vendor>.*` keys declared by the profile are preserved verbatim across import → export.
+- Float values are rounded consistently (the §3.1 canonicalizer's rounding applies to the whole bundle).
+- Arrays whose order matters (effects, gradient stops, gradient transforms, per-corner radii, layer ordering, …) preserve source order. The profile MUST document any array whose order is semantic.
+
+Round-trip stability is the property that makes a bundle a shareable artefact between authoring tools, enrichment editors, and renderers. Without it, every round-trip churns the canonical bytes and breaks content-addressing (§3).
+
+#### 17.5.3 Profile evolution
+
+Authoring profiles follow the same versioning pattern as §17.3 profiles :
+
+- Backward-incompatible changes bump the major (`x-<vendor>.authoring/2`).
+- Additive changes (new optional keys) keep the same identifier — readers MUST ignore unknown keys.
+- Deprecated keys SHOULD remain documented for at least one major (parallel reads) before removal, to give downstream consumers a migration window.
+
+#### 17.5.4 Cross-vendor adoption
+
+The pattern is intentionally vendor-neutral. Multiple authoring profiles MAY coexist in a single bundle's `profiles[]` (an enrichment tool that works on top of any authoring source declares the source's profile in addition to its own). Each profile's `metadata.<vendor>.*` block is independent ; the metadata namespace ensures no cross-vendor key collisions.
+
+### 17.6 Decision flow for extensions
 
 When a developer needs to add a non-trivial feature, they choose between mechanisms in this order :
 
@@ -1313,7 +1350,8 @@ When a developer needs to add a non-trivial feature, they choose between mechani
 2. **Vendor primitive** (§17.1) — is it a truly atomic visual that can't be composed ? Add an `x-<vendor>.<name>` primitive. Bundle becomes non-portable but the format is unchanged.
 3. **Vendor adapter** (§17.2) — is it server-side data plumbing that can't fit the standard 5 kinds ? Add an `x-<vendor>.<name>` adapter. Bundle stays portable on the wire, the server alone needs the plugin.
 4. **Profile** (§17.3) — is the feature a behaviour mode rather than a primitive (e.g. color space, layout convention) ? Declare a profile.
-5. **Metadata** (§17.4) — is it pure authoring state with no runtime impact ? Park it in `metadata`.
+5. **Authoring profile** (§17.5) — is the feature about round-tripping source-fidelity properties from an authoring tool that don't fit the LSML core catalog ? Declare an authoring profile and emit `metadata.<vendor>.*` per the profile contract.
+6. **Metadata** (§17.4) — is it pure ad-hoc authoring state with no profile contract and no runtime impact ? Park it in `metadata`.
 
 If none of these fit, the developer is hitting LSML's domain edge — the right move is to use LSDP for the data plane only and write a custom renderer (see §15.4 in `lumencast-protocol/briefs/` for the four-tier developer guide).
 
@@ -1466,11 +1504,29 @@ A minimal bundle saved as `hello.lsml` :
 
 Open this file in VS Code with the JSON language service active, and `$schema` resolution gives autocomplete + validation immediately, no extension needed.
 
+### 18.9 Archive form (`.lsmlz`)
+
+For workflows that benefit from a single-file artefact carrying both the bundle and its referenced assets — authoring tool exports, drag-and-drop transfers, email attachments, content-addressable cache entries — Lumencast defines a companion format **LSMLZ** : the `.lsml` JSON plus its `assets/` directory packaged into a ZIP archive.
+
+| Property | Value |
+|---|---|
+| Extension | `.lsmlz` (preferred) ; `.zip` accepted |
+| Media type | `application/lsml+zip` (RFC 6839 `+zip` suffix) |
+| Magic bytes | `50 4B 03 04` (standard ZIP) |
+| Layout | `<scene_id>.lsml` at root + `assets/<hash>.<ext>` siblings + reserved `_debug/` for authoring diagnostics |
+
+LSMLZ is **a packaging convention, not a new scene format**. The `.lsml` JSON inside the archive is byte-identical to the loose form. Unzipping reproduces an LSML §18-conformant `<scene>.lsml` + `assets/` tree, and any LSML reader can consume that result without LSMLZ-specific code.
+
+Full normative spec : **[LSMLZ-1](LSMLZ-1.md)** — container format, layout rules, reserved authoring prefixes, conformance for writers and readers, examples.
+
+A bundle conformant with this LSML spec is independently consumable as a loose `.lsml` JSON, regardless of whether it was extracted from an LSMLZ archive — this section exists only to forward producers and consumers to the right companion document.
+
 ---
 
 ## Reference
 
 - [JSON Schema for LSML 1.x](schema.json) (canonical machine-readable spec)
 - [LSDP/1 wire protocol](LSDP-1.md) (how bundles travel)
+- [LSMLZ/1 archive format](LSMLZ-1.md) (single-file ZIP packaging of bundle + assets)
 - [Error code taxonomy](ERROR-CODES.md)
 - [Conformance suite](../conformance/README.md)
