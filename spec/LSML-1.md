@@ -30,7 +30,6 @@ LSML is what HTML is to HTTP : the format whose instances are transported by the
 16. (reserved)
 17. [Extension mechanisms (1.1+)](#17-extension-mechanisms-11)
 18. [On-disk format](#18-on-disk-format)
-    - 18.9 [Archive form (`.lsmlz`)](#189-archive-form-lsmlz) — see [LSMLZ-1](LSMLZ-1.md) for the full spec
 
 ## 1. Document structure
 
