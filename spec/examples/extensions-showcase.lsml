@@ -12,8 +12,8 @@
     "x-zab.scene_template_id": "broadcast-default"
   },
   "profiles": [
-    "x-lumencast.color-srgb-1.0",
-    "x-acme.broadcast-1.0"
+    "x-lumencast.color-srgb/1.0",
+    "x-acme.broadcast/1.0"
   ],
   "layout": {
     "kind": "frame",

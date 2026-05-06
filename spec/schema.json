@@ -68,15 +68,16 @@
     "metadata": {
       "type": "object",
       "additionalProperties": true,
-      "description": "Authoring metadata (author, description, tags). Not consumed by runtime."
+      "description": "Open-ended authoring metadata (LSML §17.4). Not consumed by runtimes. Vendor-specific keys SHOULD be nested under a vendor identifier sub-object — `metadata.<vendor>.*` where `<vendor>` matches `[a-z][a-z0-9_-]*`. Top-level keys without a vendor namespace (`author`, `description`, `tags`, …) are reserved for generic authoring metadata."
     },
     "profiles": {
       "type": "array",
-      "description": "(1.1+) Capability profiles required for correct rendering. Each entry follows '<vendor>.<name>-<version>' (LSML §17.3). Runtimes MUST reject bundles whose profiles are not all supported.",
+      "description": "(1.1+) Capability profiles the bundle declares. Each entry follows 'x-<vendor>.<name>/<version>' where <version> is <major> or <major>.<minor> (LSML §17.3). Two flavours : (a) behavioural profiles — runtimes MUST reject when unsupported, emitting BUNDLE_INCOMPATIBLE ; (b) authoring profiles (identifier ends in '.authoring/<major>') — advisory per §17.5.1, runtimes MUST NOT reject when unsupported and MUST render the underlying primitives as if the profile were absent.",
       "items": {
         "type": "string",
         "minLength": 1,
-        "maxLength": 256
+        "maxLength": 256,
+        "pattern": "^x-[a-z][a-z0-9_-]*\\.[a-z][a-z0-9_-]*/[0-9]+(\\.[0-9]+)?$"
       }
     }
   },
@@ -677,7 +678,7 @@
         "metadata": {
           "type": "object",
           "additionalProperties": true,
-          "description": "(1.1+) Per-primitive metadata escape hatch (LSML 17.4.1). Open-ended object. Renderers ignore unless an authoring profile (17.3) declares semantics for specific keys."
+          "description": "(1.1+) Per-primitive metadata escape hatch (LSML §17.4). Open-ended object. Vendor-specific keys SHOULD nest under `metadata.<vendor>.*`. Renderers ignore unless an authoring profile (§17.5) declares semantics for specific keys."
         }
       }
     },
@@ -788,7 +789,7 @@
         "metadata": {
           "type": "object",
           "additionalProperties": true,
-          "description": "(1.1+) Per-primitive metadata escape hatch (LSML 17.4.1). Open-ended object. Renderers ignore unless an authoring profile (17.3) declares semantics for specific keys."
+          "description": "(1.1+) Per-primitive metadata escape hatch (LSML §17.4). Open-ended object. Vendor-specific keys SHOULD nest under `metadata.<vendor>.*`. Renderers ignore unless an authoring profile (§17.5) declares semantics for specific keys."
         }
       }
     },
@@ -894,7 +895,7 @@
         "metadata": {
           "type": "object",
           "additionalProperties": true,
-          "description": "(1.1+) Per-primitive metadata escape hatch (LSML 17.4.1). Open-ended object. Renderers ignore unless an authoring profile (17.3) declares semantics for specific keys."
+          "description": "(1.1+) Per-primitive metadata escape hatch (LSML §17.4). Open-ended object. Vendor-specific keys SHOULD nest under `metadata.<vendor>.*`. Renderers ignore unless an authoring profile (§17.5) declares semantics for specific keys."
         }
       }
     },
@@ -967,7 +968,7 @@
         "metadata": {
           "type": "object",
           "additionalProperties": true,
-          "description": "(1.1+) Per-primitive metadata escape hatch (LSML 17.4.1). Open-ended object. Renderers ignore unless an authoring profile (17.3) declares semantics for specific keys."
+          "description": "(1.1+) Per-primitive metadata escape hatch (LSML §17.4). Open-ended object. Vendor-specific keys SHOULD nest under `metadata.<vendor>.*`. Renderers ignore unless an authoring profile (§17.5) declares semantics for specific keys."
         }
       },
       "not": {
@@ -1053,7 +1054,7 @@
         "metadata": {
           "type": "object",
           "additionalProperties": true,
-          "description": "(1.1+) Per-primitive metadata escape hatch (LSML 17.4.1). Open-ended object. Renderers ignore unless an authoring profile (17.3) declares semantics for specific keys."
+          "description": "(1.1+) Per-primitive metadata escape hatch (LSML §17.4). Open-ended object. Vendor-specific keys SHOULD nest under `metadata.<vendor>.*`. Renderers ignore unless an authoring profile (§17.5) declares semantics for specific keys."
         }
       }
     },
@@ -1128,7 +1129,7 @@
         "metadata": {
           "type": "object",
           "additionalProperties": true,
-          "description": "(1.1+) Per-primitive metadata escape hatch (LSML 17.4.1). Open-ended object. Renderers ignore unless an authoring profile (17.3) declares semantics for specific keys."
+          "description": "(1.1+) Per-primitive metadata escape hatch (LSML §17.4). Open-ended object. Vendor-specific keys SHOULD nest under `metadata.<vendor>.*`. Renderers ignore unless an authoring profile (§17.5) declares semantics for specific keys."
         }
       }
     },
@@ -1244,7 +1245,7 @@
         "metadata": {
           "type": "object",
           "additionalProperties": true,
-          "description": "(1.1+) Per-primitive metadata escape hatch (LSML 17.4.1). Open-ended object. Renderers ignore unless an authoring profile (17.3) declares semantics for specific keys."
+          "description": "(1.1+) Per-primitive metadata escape hatch (LSML §17.4). Open-ended object. Vendor-specific keys SHOULD nest under `metadata.<vendor>.*`. Renderers ignore unless an authoring profile (§17.5) declares semantics for specific keys."
         }
       },
       "allOf": [
@@ -1404,7 +1405,7 @@
         "metadata": {
           "type": "object",
           "additionalProperties": true,
-          "description": "(1.1+) Per-primitive metadata escape hatch (LSML 17.4.1). Open-ended object. Renderers ignore unless an authoring profile (17.3) declares semantics for specific keys."
+          "description": "(1.1+) Per-primitive metadata escape hatch (LSML §17.4). Open-ended object. Vendor-specific keys SHOULD nest under `metadata.<vendor>.*`. Renderers ignore unless an authoring profile (§17.5) declares semantics for specific keys."
         }
       },
       "anyOf": [
@@ -1469,7 +1470,7 @@
         "metadata": {
           "type": "object",
           "additionalProperties": true,
-          "description": "(1.1+) Per-primitive metadata escape hatch (LSML 17.4.1). Open-ended object. Renderers ignore unless an authoring profile (17.3) declares semantics for specific keys."
+          "description": "(1.1+) Per-primitive metadata escape hatch (LSML §17.4). Open-ended object. Vendor-specific keys SHOULD nest under `metadata.<vendor>.*`. Renderers ignore unless an authoring profile (§17.5) declares semantics for specific keys."
         }
       }
     },
@@ -1573,7 +1574,7 @@
         "metadata": {
           "type": "object",
           "additionalProperties": true,
-          "description": "(1.1+) Per-primitive metadata escape hatch (LSML 17.4.1). Open-ended object. Renderers ignore unless an authoring profile (17.3) declares semantics for specific keys."
+          "description": "(1.1+) Per-primitive metadata escape hatch (LSML §17.4). Open-ended object. Vendor-specific keys SHOULD nest under `metadata.<vendor>.*`. Renderers ignore unless an authoring profile (§17.5) declares semantics for specific keys."
         }
       }
     },
