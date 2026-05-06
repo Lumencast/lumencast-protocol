@@ -1310,7 +1310,17 @@ The mechanism stitches §17.3 (capability declaration) and §17.4 (vendor metada
 3. A profile-aware renderer reads those keys to reproduce source-fidelity properties (effects, blend modes, masks, custom layout flags, …) that LSML's core catalog cannot carry natively.
 4. A non-aware renderer ignores the metadata per §17.4 and renders the underlying primitives best-effort. The bundle still validates structurally.
 
-#### 17.5.1 Round-trip stability
+#### 17.5.1 Advisory semantics — exception to §17.3
+
+§17.3 specifies that an unsupported entry in `profiles[]` MUST trigger `BUNDLE_INCOMPATIBLE` rejection. **Authoring profiles override that rule** : a renderer that does not support `x-<vendor>.authoring/<major>` MUST NOT reject the bundle, MUST NOT emit `BUNDLE_INCOMPATIBLE`, and MUST render the underlying LSML primitives as if the profile were absent.
+
+The rationale is that authoring profiles describe **enrichments** layered on top of a structurally complete LSML bundle. The bundle stays renderable without them ; the profile only adds source-fidelity that a generic renderer cannot reproduce anyway. Rejecting the bundle would be strictly worse than partial rendering.
+
+Behavioural profiles (color space, layout convention, etc. — typical §17.3 profiles) keep §17.3's rejection semantics : their absence changes the rendered result substantively. Authoring profiles do not.
+
+A renderer detects authoring profiles by the `.authoring/` segment in the identifier (i.e. `<vendor>.authoring/<major>`). Identifiers without this segment follow §17.3 strict rejection.
+
+#### 17.5.2 Round-trip stability
 
 Two implementations of the same authoring profile SHOULD produce **byte-equivalent** output after canonicalisation when given the same logical input. Achieving this requires :
 
@@ -1320,7 +1330,7 @@ Two implementations of the same authoring profile SHOULD produce **byte-equivale
 
 Round-trip stability is the property that makes a bundle a shareable artefact between authoring tools, enrichment editors, and renderers. Without it, every round-trip churns the canonical bytes and breaks content-addressing (§3).
 
-#### 17.5.2 Profile evolution
+#### 17.5.3 Profile evolution
 
 Authoring profiles follow the same versioning pattern as §17.3 profiles :
 
@@ -1328,7 +1338,7 @@ Authoring profiles follow the same versioning pattern as §17.3 profiles :
 - Additive changes (new optional keys) keep the same identifier — readers MUST ignore unknown keys.
 - Deprecated keys SHOULD remain documented for at least one major (parallel reads) before removal, to give downstream consumers a migration window.
 
-#### 17.5.3 Cross-vendor adoption
+#### 17.5.4 Cross-vendor adoption
 
 The pattern is intentionally vendor-neutral. Multiple authoring profiles MAY coexist in a single bundle's `profiles[]` (an enrichment tool that works on top of any authoring source declares the source's profile in addition to its own). Each profile's `metadata.<vendor>.*` block is independent ; the metadata namespace ensures no cross-vendor key collisions.
 
