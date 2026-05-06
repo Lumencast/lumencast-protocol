@@ -66,7 +66,7 @@ application/lsml+zip
 
 The `+zip` suffix per [RFC 6839](https://www.rfc-editor.org/rfc/rfc6839) declares ZIP as the structural syntax. HTTP servers serving archives SHOULD set `Content-Type: application/lsml+zip`.
 
-For HTTP `Accept` negotiation, clients MAY accept `application/zip` to remain interoperable with generic-tool consumers. The LSML JSON inside the archive carries `application/lsml+json` (§LSML-1 §18.2).
+For HTTP `Accept` negotiation, clients MAY accept `application/zip` to remain interoperable with generic-tool consumers. The LSML JSON inside the archive carries `application/lsml+json` per [LSML §18.2](LSML-1.md#182-media-type).
 
 ### 2.4 Magic bytes
 
@@ -153,15 +153,14 @@ A conforming LSMLZ writer MUST :
 A conforming writer SHOULD :
 
 1. Use DEFLATE compression (method 8) at level 6 or higher for the `.lsml` entry. PNG / JPEG asset entries SHOULD be DEFLATEd as well — the storage savings are negligible but the cost is also negligible.
-2. Emit entries in stable order (e.g. lexicographic) for reproducible builds.
+2. Emit the `<scene_id>.lsml` entry FIRST so streaming readers can consume the bundle without reading the entire archive ; assets and other entries follow in lexicographic order for reproducible builds.
 3. Set entry timestamps to a fixed sentinel (e.g. 1980-01-01 00:00:00, the ZIP epoch floor) for reproducible builds.
-4. Emit the `<scene_id>.lsml` entry FIRST so streaming readers can consume the bundle without reading the entire archive.
 
 ### 5.2 Reader requirements
 
 A conforming LSMLZ reader MUST :
 
-1. Accept any ZIP archive produced per §2.1.
+1. Accept any ZIP archive produced per §2 (container format).
 2. Locate the bundle entry per §3.1 (the single `*.lsml` / `*.lsml.json` entry at the archive root).
 3. Extract asset entries under `assets/` and make them resolvable via the bundle's `bind.src` references.
 4. Reject archives that violate §3.4 with the corresponding `LSMLZ_*` error code.
@@ -261,7 +260,7 @@ A runtime / broadcast server consuming this archive ignores `_debug/` entirely a
 ### 7.3 Pure-stdlib reader (Python)
 
 ```python
-import io, json, zipfile
+import json, zipfile
 
 def read_lsmlz(path):
     with zipfile.ZipFile(path) as z:
