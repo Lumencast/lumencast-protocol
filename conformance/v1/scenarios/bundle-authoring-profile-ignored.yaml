@@ -1,9 +1,9 @@
 name: bundle-authoring-profile-ignored
-description: "LSML 1.1+ A bundle declaring `x-figma.authoring/1` (an authoring profile) plus a per-primitive `metadata.figma.*` block validates structurally even when the runtime does not advertise support for the profile. Authoring profiles use the slash-major suffix (`/1`) and are silently ignored when unsupported, unlike rendering profiles which use a dash-version suffix and trigger BUNDLE_INCOMPATIBLE on mismatch (LSML 1.1 §17.3, §17.4)."
+description: "LSML 1.1+ A bundle declaring an authoring profile (identifier ending in `.authoring/<major>`, here `x-figma.authoring/1`) plus a per-primitive `metadata.<vendor>.*` block validates structurally even when the runtime does not advertise support. Authoring profiles are advisory per §17.5.1 — runtimes MUST NOT reject when the profile is unsupported, in contrast with behavioural profiles tested by `bundle-unsupported-profile-rejected`. (LSML 1.1 §17.4, §17.5)."
 tag: recommended
 target: server
 spec_refs:
-  - LSML-1#173-profiles-11
+  - LSML-1#175-authoring-profiles
   - LSML-1#174-the-metadata-field-universal-escape-hatch
 
 bundles:

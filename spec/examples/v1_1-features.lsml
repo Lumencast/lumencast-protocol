@@ -8,7 +8,7 @@
     "x-acme.editor_locked": false
   },
   "profiles": [
-    "x-lumencast.color-srgb-1.0"
+    "x-lumencast.color-srgb/1.0"
   ],
   "layout": {
     "kind": "frame",

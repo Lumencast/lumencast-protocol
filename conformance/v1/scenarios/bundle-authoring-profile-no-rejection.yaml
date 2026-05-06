@@ -1,0 +1,67 @@
+name: bundle-authoring-profile-no-rejection
+description: "LSML 1.1+ §17.5.1 advisory carve-out — A bundle declaring an authoring profile (`x-<vendor>.authoring/<major>`) the runtime does NOT support MUST NOT be rejected. The runtime MUST render the underlying LSML primitives as if the profile were absent. This is the explicit exception to §17.3's strict rejection rule for behavioural profiles."
+tag: required
+target: runtime
+spec_refs:
+  - LSML-1#175-authoring-profiles
+  - LSML-1#1751-advisory-semantics-exception-to-173
+  - LSML-1#173-profiles-11
+
+bundles:
+  - id: authoring-profile-unknown
+    inline:
+      $schema: https://lumencast.dev/schema/lsml/1.1/schema.json
+      lsml: "1.1"
+      scene_id: authoring-unknown
+      scene_version: sha256:adadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadad
+      # `.authoring/` segment in the identifier flips the profile to advisory
+      # per §17.5.1, regardless of whether the runtime knows the vendor.
+      profiles:
+        - "x-fictional-vendor.authoring/1"
+      metadata:
+        author: alice
+        # Vendor metadata under the matching <vendor> sub-object — runtime
+        # ignores per §17.4.
+        "fictional-vendor":
+          editor_state: "draft"
+      layout:
+        kind: frame
+        size: { w: 800, h: 600 }
+        background: "#000000"
+        children:
+          - kind: text
+            bind: { value: title }
+            position: { x: 40, y: 40 }
+            style:
+              fontSize: 32
+              color: "#ffffff"
+            metadata:
+              # Per-primitive vendor metadata — also runtime-ignored.
+              "fictional-vendor":
+                layerName: "Title text"
+      defaults:
+        title: "Hello"
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  # The runtime fetches the bundle, sees the unknown authoring profile,
+  # and STILL serves the snapshot — no BUNDLE_INCOMPATIBLE rejection.
+  # This is the §17.5.1 advisory carve-out behaviour.
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: authoring-unknown
+      scene_version: $ANY_HASH
+      state: $ANY
+
+  # Negative assertion : no BUNDLE_INCOMPATIBLE error frame is emitted.
+  # (Implicit — the snapshot above proves the bundle was accepted ;
+  # if the runtime rejected, the snapshot step would have been a server
+  # error frame instead.)

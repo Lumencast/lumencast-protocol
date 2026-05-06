@@ -340,8 +340,8 @@
       "tag": "recommended",
       "target": "server",
       "covers": [
-        "LSML-1#17.3",
-        "LSML-1#17.4"
+        "LSML-1#17.4",
+        "LSML-1#17.5"
       ]
     },
     {
