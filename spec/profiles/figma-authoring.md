@@ -3,7 +3,7 @@
 > **Status** : v1, initial publication. Additive over LSML 1.1 ; declared via the `profiles[]` mechanism (LSML §17.3) and consumed via the `metadata.figma.*` escape hatch (LSML §17.4).
 > **Identifier** : `x-figma.authoring/1`
 > **Audience** : authoring tools that import / export LSML bundles produced by a Figma plugin, and renderers that want maximum visual fidelity to the original Figma design.
-> **Generic pattern** : this profile is the canonical implementation of the **authoring profile** mechanism formalised in [LSML §17.5](../LSML-1.md#175-authoring-profiles). Every `metadata.figma.*` key listed below carries round-trip information per §17.5.1 (verbatim preservation, consistent float rounding, stable array order). Other vendors MAY model their authoring profile after this one — see §17.5.3 + the bottom-of-document "Adopting the profile from another vendor" section.
+> **Generic pattern** : this profile is the canonical implementation of the **authoring profile** mechanism formalised in [LSML §17.5](../LSML-1.md#175-authoring-profiles). It is **advisory** per §17.5.1 — a renderer that does not support it MUST NOT reject the bundle. Every `metadata.figma.*` key listed below carries round-trip information per §17.5.2 (verbatim preservation, consistent float rounding, stable array order). Other vendors MAY model their authoring profile after this one — see §17.5.4 + the bottom-of-document "Adopting the profile from another vendor" section.
 
 ## Why a profile rather than spec extensions
 
@@ -25,7 +25,7 @@ A bundle authored by a Figma plugin SHOULD declare the profile at the top level 
 }
 ```
 
-A renderer MAY support a subset of the profile. Per LSML §17.3 the runtime MUST treat unknown profiles as no-ops — the bundle still validates structurally even when the renderer ignores `metadata.figma.*` entirely. Visual fidelity degrades gracefully :
+A renderer MAY support a subset of the profile. Per LSML §17.5.1 (advisory semantics — exception to §17.3) a renderer that does not recognise the profile identifier MUST NOT reject the bundle and MUST render the underlying LSML primitives as if the profile were absent. Visual fidelity degrades gracefully :
 
 | Renderer support | Behaviour |
 |---|---|
@@ -231,25 +231,19 @@ Already widely used. Parallel-indexed with `fills[]` ; each entry is the Figma 2
 ### 11. Frame extras
 
 ```json
-{ "metadata": { "figma": { "clipsContent": false, "layerName": "Frame 7" } } }
+{ "metadata": { "figma": { "layerName": "Frame 7" } } }
 ```
 
-- `clipsContent` : LSML 1.1 has a first-class `frame.clipsContent` (§4.3) ; the metadata key is kept for backward compatibility with v0.1 bundles. Readers SHOULD prefer the canonical field.
-- `layerName` : the source Figma `node.name` verbatim, including any `[bind:...]` directive prefix. Importers restore it on re-import so the layer panel matches the source exactly.
-
-### 12. Position fallback (legacy)
-
-`metadata.figma.position` was used in pre-1.1.x bundles to carry per-leaf absolute position. LSML 1.1 promotes `position` to a universal prop (§5.4) ; the metadata key remains a fallback for v0.1 bundle compatibility. Readers SHOULD prefer the canonical universal `position`.
+- `layerName` : the source Figma `node.name` verbatim, including any `[bind:...]` directive prefix. Importers restore it on re-import so the layer panel matches the source exactly. (Note : `layerName` applies to every primitive, not just frames — the slot is documented here because frames are the typical "named container" case in Figma.)
 
 ## Interpretation order
 
 When more than one key would affect the same visual property, readers apply them in this order (later overrides earlier) :
 
-1. LSML core primitive fields (`fill`, `cornerRadius`, `position`, `textTransform`, …).
-2. `metadata.figma.*` legacy fallback keys (`position`, `clipsContent`, `textCase` for the 3 cases representable in `textTransform`).
-3. `metadata.figma.*` profile-specific keys (`effects`, `blendMode`, `cornerRadii`, …).
+1. LSML core primitive fields (`fill`, `cornerRadius`, `position`, `clipsContent`, `textTransform`, …).
+2. `metadata.figma.*` profile-specific keys (`effects`, `blendMode`, `cornerRadii`, gradient transforms, stroke details, …).
 
-Rationale : core fields are portable ; legacy fallbacks support older bundles ; profile-specific keys add Figma fidelity on top.
+Rationale : core fields are portable across renderers ; profile-specific keys add Figma fidelity on top for renderers that opt into the profile.
 
 ## Conformance — graceful ignore
 
