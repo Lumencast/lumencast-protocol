@@ -352,6 +352,23 @@
                   "$ref": "#/$defs/AssetUrl"
                 }
               }
+            },
+            {
+              "type": "object",
+              "required": [
+                "kind",
+                "ref"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "group"
+                },
+                "ref": {
+                  "type": "string",
+                  "description": "id of a sibling GROUP/FRAME container ; the mask coverage is the union of its visible children's geometry (ADR 002 A4.3)."
+                }
+              }
             }
           ]
         },
