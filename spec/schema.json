@@ -129,7 +129,7 @@
       }
     },
     "Fill": {
-      "description": "(1.1+) Discriminated fill spec. Used by shape.fills[] and frame.backgrounds[]. See LSML §4.12.",
+      "description": "(1.1+) Discriminated fill spec. Used by shape.fills[] and frame.backgrounds[]. See LSML §4.12. (1.2+, #L) Each variant may carry an optional `blendMode` (the closed BlendMode enum) applied as a per-fill-layer mix-blend-mode, independent of the node-level blendMode ; absent = normal (retro-compatible).",
       "oneOf": [
         {
           "type": "object",
@@ -149,6 +149,9 @@
               "type": "number",
               "minimum": 0,
               "maximum": 1
+            },
+            "blendMode": {
+              "$ref": "#/$defs/BlendMode"
             }
           }
         },
@@ -180,6 +183,9 @@
               "items": {
                 "$ref": "#/$defs/FillStop"
               }
+            },
+            "blendMode": {
+              "$ref": "#/$defs/BlendMode"
             }
           }
         },
@@ -215,6 +221,9 @@
               "items": {
                 "$ref": "#/$defs/FillStop"
               }
+            },
+            "blendMode": {
+              "$ref": "#/$defs/BlendMode"
             }
           }
         },
@@ -243,6 +252,9 @@
             },
             "transform": {
               "$ref": "#/$defs/GradientTransform"
+            },
+            "blendMode": {
+              "$ref": "#/$defs/BlendMode"
             }
           }
         }

@@ -100,6 +100,29 @@ rendered via SVG `gradientTransform`. It supersedes `angle_deg` when present.
   "objectFit": "cover", "transform": [1, 0, 0, 1, 12, 4] }
 ```
 
+### 4.3 Per-fill `blendMode` (1.2+, #L)
+
+`blendMode` (§2) is **per node**. A Figma node with **stacked fills** carries a blend
+mode **per paint** ; §2 alone would drop every per-layer blend but the node's. **Each
+`LSMLFill` variant** (`solid` / `linear-gradient` / `radial-gradient` / `image`) MAY
+therefore carry its own optional `blendMode`, applied as a per-fill-layer
+`mix-blend-mode` — **independent** of, and composed under, the node-level `blendMode`.
+
+- **Type** : the same closed `BlendMode` enum as §2 — **no new value** is introduced.
+- **Retro-compat** : a fill **without** `blendMode` renders `normal` (a pre-#L 1.2
+  bundle is unchanged).
+- **Enforcement (T4)** : a per-fill value outside the enum is rejected — diagnostic +
+  omission, **never passthrough** ; double-gated by the compiler and the runtime, like
+  the node blend. On a `shape` the per-fill blend lands on the layer's SVG paint
+  element ; on a `frame` background it lowers to CSS `background-blend-mode` (one
+  keyword per layer, same order). `blendMode` per variant in `$defs/Fill`.
+
+```json
+{ "kind": "shape", "geometry": "rect", "blendMode": "hard-light",
+  "fills": [ { "kind": "solid", "color": "#f00", "blendMode": "multiply" },
+             { "kind": "solid", "color": "#00f", "blendMode": "screen" } ] }
+```
+
 ## 5. Asset URL gate (T1 + T2, normative for 1.2 asset sources)
 
 Every URL that reaches the DOM through a 1.2 construct — an image-fill `src`, a
