@@ -50,7 +50,7 @@ structurally impossible). `mask` supersedes `clipsContent` for non-rectangular c
 
 | Field | Type | Req | Description |
 |---|---|---|---|
-| `source` | `{ kind:"shape"; ref }` \| `{ kind:"image"; src }` | yes | Mask coverage : a sibling shape by `id`, or an image asset. |
+| `source` | `{ kind:"shape"; ref }` \| `{ kind:"image"; src }` \| `{ kind:"group"; ref }` | yes | Mask coverage : a sibling shape by `id`, an image asset, or a sibling GROUP/FRAME container by `id` (composite of its visible children). |
 | `type` | `"alpha"` \| `"luminance"` | yes | Channel read from the source. |
 | `op` | `"intersect"` \| `"subtract"` \| `"union"` | yes | Boolean composition against the masked content. |
 | `position` | `{ x, y }` | no | Placement of the source within the masked box. |
@@ -60,6 +60,13 @@ structurally impossible). `mask` supersedes `clipsContent` for non-rectangular c
   mask (it cannot be partially honoured) — diagnostic, never passthrough.
 - **Enforcement (T1/T2)** : a `source.kind === "image"` `src` MUST pass the asset URL
   gate (§5) before reaching the DOM. `$defs/Mask` in `schema.json`.
+- **`source.kind === "group"` (1.2+, ADR 002 A4.3)** : `ref` is the `id` of a sibling
+  GROUP/FRAME container. The runtime composites the **union** of the coverage geometry of
+  the container's **visible** direct children (`visible !== false`). Anti-cycle : only the
+  children's own geometry is inlined, never their or the container's own `mask` (resolution
+  depth = 1). A descent / N cap bounds the composite — beyond it, truncation + diagnostic,
+  never an unbounded build (T5). A pending `ref` or an empty container → mask omitted, no
+  crash. The builder stays 100 % typed (T3).
 
 ```json
 { "kind": "shape", "geometry": "rect",
