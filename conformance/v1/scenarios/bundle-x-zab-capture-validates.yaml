@@ -1,0 +1,42 @@
+name: bundle-x-zab-capture-validates
+description: RFC-0001 A bundle using the Zab vendor primitive `x-zab.capture` (transparent capture placeholder) is structurally valid against a runtime that ships the Zab plugin. The node carries `x-zab.sourceKind`, a logical `x-zab.deviceRef` and `size`, declares `x-zab.capture/1` in `profiles[]`, and renders a transparent box that acquires no stream. (RFC-0001, LSML 1.1 §17.1).
+tag: required
+target: runtime
+spec_refs:
+  - LSML-1#171-vendor-prefixed-primitive-kind-values-11
+  - LSML-1#173-capability-profiles-11
+
+bundles:
+  - id: capture-bundle
+    inline:
+      $schema: https://lumencast.dev/schema/lsml/1.1/schema.json
+      lsml: "1.1"
+      scene_id: capture-scene
+      scene_version: sha256:cababababababababababababababababababababababababababababababab
+      profiles:
+        - x-zab.capture/1
+      layout:
+        kind: frame
+        size: { w: 1920, h: 1080 }
+        children:
+          - kind: x-zab.capture
+            id: cam
+            x-zab.sourceKind: media.webcam
+            x-zab.deviceRef: primary-cam
+            size: { w: 640, h: 360 }
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: capture-scene
+      scene_version: $ANY_HASH
+      state: $ANY

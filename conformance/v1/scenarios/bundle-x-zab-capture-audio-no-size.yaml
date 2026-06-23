@@ -1,0 +1,40 @@
+name: bundle-x-zab-capture-audio-no-size
+description: "RFC-0001 An audio-only `x-zab.capture` (`sourceKind: media.mic`) MAY omit `size` — it is a valid, zero-area inert placeholder. The Zab-plugin runtime accepts it and acquires no stream. (RFC-0001, LSML 1.1 §17.1)."
+tag: required
+target: runtime
+spec_refs:
+  - LSML-1#171-vendor-prefixed-primitive-kind-values-11
+
+bundles:
+  - id: capture-audio-bundle
+    inline:
+      $schema: https://lumencast.dev/schema/lsml/1.1/schema.json
+      lsml: "1.1"
+      scene_id: capture-audio-scene
+      scene_version: sha256:cabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc
+      profiles:
+        - x-zab.capture/1
+      layout:
+        kind: frame
+        size: { w: 1920, h: 1080 }
+        children:
+          - kind: x-zab.capture
+            id: mic
+            x-zab.sourceKind: media.mic
+            x-zab.deviceRef: main-mic
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: capture-audio-scene
+      scene_version: $ANY_HASH
+      state: $ANY
