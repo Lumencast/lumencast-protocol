@@ -1,6 +1,6 @@
 # RFC-0001 — `x-zab.capture` : a transparent capture-placeholder primitive
 
-- **Status** : accepted (`rfc:accepted`) — see **Amendment 1** (2026-06-23, `rfc:proposed`, re-validation Vigil pending) and **Amendment 2** (2026-07-27, `rfc:proposed`, enum → 8 source kinds)
+- **Status** : accepted (`rfc:accepted`) — see **Amendment 1** (2026-06-23, `rfc:accepted`) and **Amendment 2** (2026-07-27, `rfc:accepted`, enum → 8 source kinds)
 - **Date** : 2026-06-23
 - **Author** : Atlas (Zab vendor)
 - **Affects** : LSML 1.1 primitive catalog (§4, §17.1), `@lumencast/compiler`, `@lumencast/runtime`, conformance suite
@@ -290,7 +290,7 @@ strict-fallback §17.1.2, and all compatibility claims are UNCHANGED by this ame
 ## Amendment 2 — three non-device capture classes
 
 - **Date** : 2026-07-27
-- **Status** : `rfc:proposed`
+- **Status** : `rfc:accepted`
 - **Author** : Atlas
 - **Amends** : the `x-zab.sourceKind` enum in the §"Spec text" prop table (five values →
   eight). Everything else — the kind shape, `deviceRef` grammar and hash membership, the
