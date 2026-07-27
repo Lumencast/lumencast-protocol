@@ -71,65 +71,72 @@ while (( $# )); do
     esac
 done
 
+# Ask a CLI for its own help and check that it advertises `${2}`. An SDK
+# that has not shipped its interop hooks yet still ships a `lumencast`
+# binary : without this probe such a cell reports FAIL (a regression the
+# protocol repo cannot fix) instead of n/a (not wired yet).
+_supports_subcommand() {
+    local launcher="$1" sub="$2" help_out=""
+    local timeout_cmd=""
+    command -v timeout >/dev/null 2>&1 && timeout_cmd="timeout 20"
+    # shellcheck disable=SC2086
+    help_out="$(${timeout_cmd} ${launcher} --help 2>&1)" || true
+    grep -qE "(^|[^[:alnum:]_-])${sub}([^[:alnum:]_-]|$)" <<<"${help_out}"
+}
+
 # Map impl name → "<command> ..." invocation lines that the driver
 # substitutes {CONTROL_PORT} and {WS_PORT} into for serve-scenario, and
 # {WS_URL} and {CONTROL_URL} into for conformance.
+#
+# Returns 1 (→ cell reported n/a) when the SDK is absent, unbuilt, or does
+# not advertise the requested interop subcommand.
 _resolve_sdk() {
     local impl="$1" mode="$2"  # mode = serve | conform
+    local launcher="" prefix="" bin="" entry=""
     case "${impl}" in
         go)
-            local bin="${LUMENCAST_GO}/bin/lumencast"
-            if [[ ! -x "${bin}" ]]; then return 1; fi
-            case "${mode}" in
-                serve)
-                    echo "${bin} serve-scenario --test-control-port {CONTROL_PORT} --ws-port {WS_PORT}"
-                    ;;
-                conform)
-                    echo "${bin} conformance --server {WS_URL} --control-url {CONTROL_URL}"
-                    ;;
-            esac
+            bin="${LUMENCAST_GO}/bin/lumencast"
+            [[ -x "${bin}" ]] || return 1
+            launcher="${bin}"
             ;;
         js)
-            local entry="${LUMENCAST_JS}/packages/server/dist/cli.js"
-            if [[ ! -f "${entry}" ]]; then return 1; fi
             case "${mode}" in
-                serve)
-                    echo "node ${entry} serve-scenario --test-control-port {CONTROL_PORT} --ws-port {WS_PORT}"
-                    ;;
-                conform)
-                    local hentry="${LUMENCAST_JS}/packages/protocol/dist/cli.js"
-                    [[ -f "${hentry}" ]] || return 1
-                    echo "node ${hentry} conformance --server {WS_URL} --control-url {CONTROL_URL}"
-                    ;;
+                serve)   entry="${LUMENCAST_JS}/packages/server/dist/cli.js" ;;
+                conform) entry="${LUMENCAST_JS}/packages/protocol/dist/cli.js" ;;
+                *)       return 1 ;;
             esac
+            [[ -f "${entry}" ]] || return 1
+            launcher="node ${entry}"
             ;;
         rs)
-            local bin="${LUMENCAST_RS}/target/release/lumencast"
-            if [[ ! -x "${bin}" ]]; then return 1; fi
-            case "${mode}" in
-                serve)
-                    echo "${bin} serve-scenario --test-control-port {CONTROL_PORT} --ws-port {WS_PORT}"
-                    ;;
-                conform)
-                    echo "${bin} conformance --server {WS_URL} --control-url {CONTROL_URL}"
-                    ;;
-            esac
+            bin="${LUMENCAST_RS}/target/release/lumencast"
+            [[ -x "${bin}" ]] || return 1
+            launcher="${bin}"
             ;;
         py)
-            # Prefer the project's uv-managed venv if present, else fall back
-            # to whichever python3 is on PATH (CI uses the latter via uv sync).
-            local entry="${LUMENCAST_PY}/.venv/bin/python"
+            # The py SDK is usable only when its checkout is present AND the
+            # module is importable : a bare system python3 would otherwise
+            # resolve here and produce bogus FAILs for every py cell.
+            [[ -d "${LUMENCAST_PY}" ]] || return 1
+            entry="${LUMENCAST_PY}/.venv/bin/python"
             [[ -x "${entry}" ]] || entry="${LUMENCAST_PY}/.venv/Scripts/python.exe"
             [[ -x "${entry}" ]] || entry="$(command -v python3 || command -v python || true)"
-            [[ -x "${entry}" ]] || return 1
-            case "${mode}" in
-                serve)
-                    echo "${entry} -m lumencast serve-scenario --test-control-port {CONTROL_PORT} --ws-port {WS_PORT}"
-                    ;;
-                conform)
-                    echo "env LUMENCAST_PROTOCOL_REPO=${REPO_ROOT} ${entry} -m lumencast conformance --server {WS_URL} --control-url {CONTROL_URL}"
-                    ;;
-            esac
+            [[ -n "${entry}" && -x "${entry}" ]] || return 1
+            "${entry}" -c 'import lumencast' >/dev/null 2>&1 || return 1
+            launcher="${entry} -m lumencast"
+            prefix="env LUMENCAST_PROTOCOL_REPO=${REPO_ROOT} "
+            ;;
+        *) return 1 ;;
+    esac
+
+    case "${mode}" in
+        serve)
+            _supports_subcommand "${launcher}" serve-scenario || return 1
+            echo "${prefix}${launcher} serve-scenario --test-control-port {CONTROL_PORT} --ws-port {WS_PORT}"
+            ;;
+        conform)
+            _supports_subcommand "${launcher}" conformance || return 1
+            echo "${prefix}${launcher} conformance --server {WS_URL} --control-url {CONTROL_URL}"
             ;;
         *) return 1 ;;
     esac
@@ -246,7 +253,8 @@ main() {
 
     declare -A results
     local total_fails=0
-    local total_runs=0
+    local total_cells=0
+    local executed=0
 
     for server in "${SDKS[@]}"; do
         [[ -n "${WANT_SERVER}" && "${server}" != "${WANT_SERVER}" ]] && continue
@@ -258,8 +266,11 @@ main() {
             local outcome
             outcome="$(_run_pair "${server}" "${harness}" "${WANT_SCENARIO}")"
             results["${server}×${harness}"]="${outcome}"
-            total_runs=$((total_runs + 1))
-            [[ "${outcome}" == "FAIL" ]] && total_fails=$((total_fails + 1))
+            total_cells=$((total_cells + 1))
+            case "${outcome}" in
+                PASS) executed=$((executed + 1)) ;;
+                FAIL) executed=$((executed + 1)); total_fails=$((total_fails + 1)) ;;
+            esac
         done
     done
 
@@ -273,13 +284,22 @@ main() {
             local s="${key%%×*}" h="${key##*×}"
             printf '| %s | %s | %s |\n' "${s}" "${h}" "${results[${key}]}"
         done | sort
+        echo
+        printf '%s executed cell(s) out of %s — %s failed, %s reported n/a (SDK absent or interop hooks not wired).\n' \
+            "${executed}" "${total_cells}" "${total_fails}" "$((total_cells - executed))"
     } | tee /dev/stderr | { [[ -n "${REPORT_PATH}" ]] && cat > "${REPORT_PATH}" || cat > /dev/null; }
 
+    if (( executed == 0 )); then
+        # Every cell was n/a : no conformance scenario ran at all. Reporting
+        # success here is the false-pass this driver exists to prevent.
+        _log "no cell could run (${total_cells} cells, all n/a) — refusing to report success"
+        exit 2
+    fi
     if (( total_fails > 0 )); then
-        _log "${total_fails}/${total_runs} cells failed"
+        _log "${total_fails}/${executed} executed cells failed"
         exit 1
     fi
-    _log "${total_runs}/${total_runs} cells passed"
+    _log "${executed}/${executed} executed cells passed"
 }
 
 main "$@"
