@@ -347,24 +347,40 @@ Consumers needing more than a logical alias (which authored asset, which game wi
 hold it in their own scene model, not in the bundle. That is the frontier this RFC
 already draws, restated because it is the point that keeps being re-litigated.
 
-### A2.4 Runtime behaviour
+### A2.4 Implementing the enum: TWO sets, not one
 
-Unchanged, per Amendment 1. Note for implementers: `isVisualKind` in the reference
-runtime enumerates three kinds; `media.file` and `media.game` must join it, or a bundle
-using them renders PLACEHOLDER in an ACQUIRE-capable host. That is *safe* (the on-air
-path composites natively and is unaffected) but wrong in preview. Whether an
-ACQUIRE-mode host should play a file itself is left open here — it needs a host-side
-source, not a format change.
+Runtime behaviour is unchanged, per Amendment 1. What implementers must not get wrong is
+that "visual vs audio-only" is enforced by a **second, separate set** — extending the
+enum alone is not enough:
+
+- **Compiler — `CAPTURE_VISUAL_KINDS`** (`lumencast-js/packages/compiler/src/compile.ts`,
+  next to `CAPTURE_SOURCE_KINDS`). This is the set that makes `size` required: the
+  compiler rejects a visual kind without geometry. `media.file` and `media.game` MUST join
+  it. **Extending `CAPTURE_SOURCE_KINDS` without extending `CAPTURE_VISUAL_KINDS` lets a
+  `media.file` with no `size` compile** — a zero-area media box, silently. Fixture
+  `bundle-x-zab-capture-media-file-no-size-rejected` exists to catch exactly that.
+- **Runtime — `isVisualKind`** (`packages/runtime/src/render/primitives/capture.tsx`).
+  A separate three-kind list, used to decide whether an acquired stream is painted. The
+  same two kinds must join it, or a bundle using them renders PLACEHOLDER in an
+  ACQUIRE-capable host. That is *safe* (the on-air path composites natively and is
+  unaffected) but wrong in preview.
+
+Whether an ACQUIRE-mode host should play a file itself is left open here — it needs a
+host-side source, not a format change.
 
 ### A2.5 Conformance fixture deltas
 
-- `valid/x-zab-capture-media-file.yaml` — `media.file` with `size` → compiles, renders an
-  inert box.
-- `valid/x-zab-capture-media-game.yaml` — same for `media.game`.
-- `valid/x-zab-capture-system-audio-no-size.yaml` — `media.system_audio` with `size`
+Delivered **in this amendment**, under `conformance/v1/scenarios/`, as the base RFC did
+for its own — a spec change that ships without its fixtures is a spec change nobody can
+verify:
+
+- `bundle-x-zab-capture-media-file.yaml` — `media.file` with `size` → valid, inert box.
+- `bundle-x-zab-capture-media-game.yaml` — same for `media.game`.
+- `bundle-x-zab-capture-system-audio-no-size.yaml` — `media.system_audio` with `size`
   omitted → valid, zero-area inert node.
-- `invalid/x-zab-capture-media-file-no-size.yaml` — `media.file` without `size` →
-  `INVALID_VALUE` (visual kinds require geometry).
+- `bundle-x-zab-capture-media-file-no-size-rejected.yaml` — `media.file` without `size` →
+  `INVALID_VALUE`. This is the §A2.4 trap made executable: it passes only if
+  `CAPTURE_VISUAL_KINDS` was extended alongside the enum.
 
 ### A2.6 Compatibility
 
