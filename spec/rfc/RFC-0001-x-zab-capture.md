@@ -12,7 +12,7 @@
 > "Runtime behaviour (normative)" block below is the ORIGINAL accepted text, kept for
 > history; it is SUPERSEDED by Amendment 1 at the end of this document. Read Amendment 1
 > for the binding behaviour.
-
+>
 > This RFC follows `RFC-PROCESS.md`. The change touches the LSML primitive catalog, so
 > it requires an RFC rather than a plain PR. It is **additive** (LSML 1.1, no major bump)
 > and **vendor-prefixed** (`x-zab.*` per §17.1) — it adds nothing to the *core* catalog
