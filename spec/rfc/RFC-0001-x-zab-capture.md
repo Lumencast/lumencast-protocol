@@ -1,6 +1,6 @@
 # RFC-0001 — `x-zab.capture` : a transparent capture-placeholder primitive
 
-- **Status** : accepted (`rfc:accepted`) — see **Amendment 1** (2026-06-23, `rfc:proposed`, re-validation Vigil pending)
+- **Status** : accepted (`rfc:accepted`) — see **Amendment 1** (2026-06-23, `rfc:proposed`, re-validation Vigil pending) and **Amendment 2** (2026-07-27, `rfc:proposed`, enum → 8 source kinds)
 - **Date** : 2026-06-23
 - **Author** : Atlas (Zab vendor)
 - **Affects** : LSML 1.1 primitive catalog (§4, §17.1), `@lumencast/compiler`, `@lumencast/runtime`, conformance suite
@@ -284,3 +284,97 @@ Prism issue, an app concern, not a format concern).
 Kind shape & props, `deviceRef` regex & hash membership, the frontier (Lumencast renders /
 the app resolves & — on-air — composites natively), `profiles[]` (`x-zab.capture/1`),
 strict-fallback §17.1.2, and all compatibility claims are UNCHANGED by this amendment.
+
+---
+
+## Amendment 2 — three non-device capture classes
+
+- **Date** : 2026-07-27
+- **Status** : `rfc:proposed`
+- **Author** : Atlas
+- **Amends** : the `x-zab.sourceKind` enum in the §"Spec text" prop table (five values →
+  eight). Everything else — the kind shape, `deviceRef` grammar and hash membership, the
+  frontier, `profiles[]`, strict fallback §17.1.2, Amendment 1's ACQUIRE/PLACEHOLDER
+  behaviour — is **UNCHANGED**.
+
+### A2.1 Motivation
+
+The enum was drawn from the device classes the Zab stack had at the time. Three classes
+have since entered production use on the consumer side (Zab Prism, ADR 023 §3.1 and the
+earlier system-audio work) and are rejected by the reference compiler, which validates
+`x-zab.sourceKind` against a **closed** set and throws on anything else
+(`lumencast-js/packages/compiler/src/compile.ts`, `CAPTURE_SOURCE_KINDS`). A bundle
+carrying one of them does not compile at all.
+
+This is the third time the same gap is found. The structural cause is worth recording
+rather than the symptom: **this RFC has never been merged** — it lives on
+`forge/rfc-0001-x-zab-capture` and is absent from `origin/main`, while
+`@lumencast/compiler` 0.15.0 already ships the primitive. There is no published contract
+for a consumer to track, so consumers track the code. Merging this RFC (with this
+amendment) is the fix; the enum update alone would only postpone the fourth occurrence.
+
+### A2.2 The enum (normative, replaces the `x-zab.sourceKind` row)
+
+| `x-zab.sourceKind` | Class | `size` |
+|---|---|---|
+| `media.webcam` | camera device | required (visual) |
+| `media.screen` | full display | required (visual) |
+| `media.window` | single window | required (visual) |
+| `media.file` | **new** — authored media playback | required (visual) |
+| `media.game` | **new** — game hook capture | required (visual) |
+| `media.app_audio` | per-application audio | optional (audio-only) |
+| `media.system_audio` | **new** — full desktop output loopback | optional (audio-only) |
+| `media.mic` | microphone input | optional (audio-only) |
+
+### A2.3 Why these are still `x-zab.capture`, and not a new kind
+
+`media.file` and `media.game` are not devices, which invites a separate primitive. They
+do not get one. What the primitive contracts is *"a transparent box of class X, logically
+named Y, lives here"* — geometry reserved in-band, pixels produced out-of-band by the
+consuming app. That contract is identical for a camera, a game hook and a file played by
+a native decoder. A second kind would duplicate the primitive to rename it, and would
+double the surface every runtime has to recognise.
+
+`x-zab.deviceRef` keeps its exact grammar and role for all eight classes. Its name says
+*device* for historical reasons; it has always been what the spec text calls it — a
+**logical alias** resolved outside the bundle by the host. `intro-sting` resolving to a
+file path is the same mechanism as `primary-cam` resolving to a `deviceId`, and it keeps
+the bundle content-addressed: no path, no asset id, no window handle ever enters it.
+**No new prop is added by this amendment** — a `mediaRef`-style prop was considered and
+rejected on exactly this ground.
+
+Consumers needing more than a logical alias (which authored asset, which game window)
+hold it in their own scene model, not in the bundle. That is the frontier this RFC
+already draws, restated because it is the point that keeps being re-litigated.
+
+### A2.4 Runtime behaviour
+
+Unchanged, per Amendment 1. Note for implementers: `isVisualKind` in the reference
+runtime enumerates three kinds; `media.file` and `media.game` must join it, or a bundle
+using them renders PLACEHOLDER in an ACQUIRE-capable host. That is *safe* (the on-air
+path composites natively and is unaffected) but wrong in preview. Whether an
+ACQUIRE-mode host should play a file itself is left open here — it needs a host-side
+source, not a format change.
+
+### A2.5 Conformance fixture deltas
+
+- `valid/x-zab-capture-media-file.yaml` — `media.file` with `size` → compiles, renders an
+  inert box.
+- `valid/x-zab-capture-media-game.yaml` — same for `media.game`.
+- `valid/x-zab-capture-system-audio-no-size.yaml` — `media.system_audio` with `size`
+  omitted → valid, zero-area inert node.
+- `invalid/x-zab-capture-media-file-no-size.yaml` — `media.file` without `size` →
+  `INVALID_VALUE` (visual kinds require geometry).
+
+### A2.6 Compatibility
+
+Additive, LSML 1.1, vendor-prefixed. No major bump. Bundles predating the amendment are
+unaffected. A runtime or compiler that has not taken the amendment rejects the three new
+values — which is the current, observed situation, and the reason for this amendment.
+
+### A2.7 Anti-drift requirement (normative for the reference implementation)
+
+`@lumencast/compiler` MUST export `CAPTURE_SOURCE_KINDS` **as a value**, not only as a
+TypeScript type, so a consumer can assert its own list is included in the compiler's at
+build time. Publishing the enum only as a type is what let three classes drift unnoticed:
+a consumer had no way to check, so it did not.
