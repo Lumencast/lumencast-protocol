@@ -170,6 +170,9 @@ _wait_for_discovery() {
     done
 }
 
+# Runs one (server × harness) cell. Its stdout is captured by the caller
+# and MUST carry the outcome token and nothing else — every diagnostic,
+# including verbose harness output, goes to stderr.
 _run_pair() {
     local server="$1" harness="$2" scenario_filter="${3:-}"
     local serve_cmd conform_cmd
@@ -221,7 +224,10 @@ _run_pair() {
     local conform_log; conform_log="$(mktemp -t interop.XXXXXX.conform)"
     # shellcheck disable=SC2086
     if [[ -n "${INTEROP_VERBOSE:-}" ]]; then
-        ${conform_invocation} 2>&1 | tee "${conform_log}" || rc=$?
+        # `>&2` is load-bearing : this function's stdout is the outcome
+        # token. Leaking harness output here made every cell's outcome an
+        # unmatchable blob, so no cell was ever counted as FAIL.
+        ${conform_invocation} 2>&1 | tee "${conform_log}" >&2 || rc=$?
     else
         ${conform_invocation} >"${conform_log}" 2>&1 || rc=$?
     fi
@@ -270,6 +276,12 @@ main() {
             case "${outcome}" in
                 PASS) executed=$((executed + 1)) ;;
                 FAIL) executed=$((executed + 1)); total_fails=$((total_fails + 1)) ;;
+                n/a)  ;;
+                # Anything else means a diagnostic leaked onto _run_pair's
+                # stdout. Refusing here keeps such a bug from silently
+                # degrading into "0 failures".
+                *) _log "internal error: unexpected outcome for ${server}×${harness}: ${outcome}"
+                   exit 2 ;;
             esac
         done
     done
