@@ -5,11 +5,16 @@ name: interop
 # every conformance scenario through every (server-impl × harness-impl)
 # pair.
 #
-# This workflow is INTENDED to run in degraded mode while SDKs roll out
-# their interop hooks : missing CLIs are reported as `n/a` rather than
-# causing the build to fail. As each SDK ships its `serve-scenario`
-# subcommand and `--control-url` flag, the corresponding cells of the
-# matrix turn green automatically without changes here.
+# This workflow runs in degraded mode while SDKs roll out their interop
+# hooks : an SDK that is absent, unbuilt, or does not advertise the
+# interop subcommands is reported as `n/a` rather than failing the build.
+# As each SDK ships its `serve-scenario` subcommand and `--control-url`
+# flag, the corresponding cells turn green automatically without changes
+# here.
+#
+# Degraded is NOT the same as green : the driver exits 1 if any executed
+# cell fails and 2 if *no* cell could run at all, so this job can never
+# report success without having executed a conformance scenario.
 
 on:
   push:
@@ -41,23 +46,18 @@ jobs:
         with:
           repository: Lumencast/lumencast-go
           path: lumencast-go
-          # We tolerate the repo being missing or empty — the driver
-          # reports `n/a` for unbuilt SDKs.
-          continue-on-error: true
 
       - name: Checkout lumencast-js
         uses: actions/checkout@v4
         with:
           repository: Lumencast/lumencast-js
           path: lumencast-js
-          continue-on-error: true
 
       - name: Checkout lumencast-rs
         uses: actions/checkout@v4
         with:
           repository: Lumencast/lumencast-rs
           path: lumencast-rs
-          continue-on-error: true
 
       - name: Setup Go
         if: hashFiles('lumencast-go/go.mod') != ''
@@ -115,10 +115,23 @@ jobs:
           LUMENCAST_JS: ${{ github.workspace }}/lumencast-js
           LUMENCAST_RS: ${{ github.workspace }}/lumencast-rs
           INTEROP_VERBOSE: 1
-        run: ./run-matrix.sh --report MATRIX.md || true
-        # `|| true` while the matrix is in roll-out mode. Once at least
-        # one (server, harness) pair is fully wired, drop the suffix so
-        # regressions fail the build.
+        run: ./run-matrix.sh --report MATRIX.md
+        # No `|| true` : the driver exits 1 on a failed cell and 2 when no
+        # cell could run at all, so this step is the actual gate. Roll-out
+        # tolerance lives in the driver (unwired SDK → n/a), not here.
+
+      - name: Publish matrix report to the job summary
+        if: always()
+        working-directory: lumencast-protocol/interop
+        run: |
+          if [[ -f MATRIX.md ]]; then
+            {
+              echo "### Cross-SDK interop matrix"
+              cat MATRIX.md
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::no MATRIX.md produced — the driver did not run"
+          fi
 
       - name: Upload matrix report
         if: always()
