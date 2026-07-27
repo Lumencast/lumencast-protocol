@@ -1,0 +1,42 @@
+name: bundle-x-zab-capture-bare-device-id-rejected
+description: "RFC-0001 An `x-zab.capture` whose `x-zab.deviceRef` looks like a physical device id (contains a colon or a UUID) MUST be rejected with `INVALID_VALUE` — the deviceRef is a logical, hash-safe alias matching `^[a-z][a-z0-9-]{0,63}$`, never a machine-local identifier. Baking a physical id would break content-addressing and leak machine identity into a shared bundle. (RFC-0001)."
+tag: required
+target: server
+spec_refs:
+  - LSML-1#171-vendor-prefixed-primitive-kind-values-11
+  - ERROR-CODES#invalid_value
+
+bundles:
+  - id: capture-bad-ref-bundle
+    inline:
+      $schema: https://lumencast.dev/schema/lsml/1.1/schema.json
+      lsml: "1.1"
+      scene_id: capture-bad-ref
+      scene_version: sha256:cabdeadcabdeadcabdeadcabdeadcabdeadcabdeadcabdeadcabdeadcabdeadc
+      profiles:
+        - x-zab.capture/1
+      layout:
+        kind: frame
+        size: { w: 1920, h: 1080 }
+        children:
+          - kind: x-zab.capture
+            id: cam
+            x-zab.sourceKind: media.webcam
+            x-zab.deviceRef: "video:0"
+            size: { w: 640, h: 360 }
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: error
+      seq: 1
+      code: INVALID_VALUE
+      message: $ANY
+      recoverable: false
