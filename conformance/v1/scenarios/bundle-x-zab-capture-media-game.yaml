@@ -1,0 +1,42 @@
+name: bundle-x-zab-capture-media-game
+description: RFC-0001 Amendment 2 An `x-zab.capture` of class `media.game` (game hook capture, resolved to a native hook by the consuming app) is structurally valid. It is a VISUAL kind, so `size` is required, and the window/process it stands for is resolved out of band — the bundle carries only the logical `x-zab.deviceRef`. (RFC-0001 Amendment 2 §A2.2).
+tag: required
+target: runtime
+spec_refs:
+  - LSML-1#171-vendor-prefixed-primitive-kind-values-11
+  - LSML-1#173-capability-profiles-11
+
+bundles:
+  - id: capture-media-game-bundle
+    inline:
+      $schema: https://lumencast.dev/schema/lsml/1.1/schema.json
+      lsml: "1.1"
+      scene_id: capture-media-game
+      scene_version: sha256:6a3e6a3e6a3e6a3e6a3e6a3e6a3e6a3e6a3e6a3e6a3e6a3e6a3e6a3e6a3e6a3e
+      profiles:
+        - x-zab.capture/1
+      layout:
+        kind: frame
+        size: { w: 1920, h: 1080 }
+        children:
+          - kind: x-zab.capture
+            id: gameplay
+            x-zab.sourceKind: media.game
+            x-zab.deviceRef: main-gameplay
+            size: { w: 1600, h: 900 }
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: capture-media-game
+      scene_version: $ANY_HASH
+      state: $ANY

@@ -1,0 +1,41 @@
+name: bundle-x-zab-capture-system-audio-no-size
+description: RFC-0001 Amendment 2 An `x-zab.capture` of class `media.system_audio` (full desktop-output loopback) is AUDIO-ONLY, so `size` MAY be omitted — the node is a valid zero-area inert box. The loopback has no identity of its own beyond the logical `x-zab.deviceRef`. (RFC-0001 Amendment 2 §A2.2).
+tag: required
+target: runtime
+spec_refs:
+  - LSML-1#171-vendor-prefixed-primitive-kind-values-11
+  - LSML-1#173-capability-profiles-11
+
+bundles:
+  - id: capture-system-audio-bundle
+    inline:
+      $schema: https://lumencast.dev/schema/lsml/1.1/schema.json
+      lsml: "1.1"
+      scene_id: capture-system-audio
+      scene_version: sha256:a0d10a0d10a0d10a0d10a0d10a0d10a0d10a0d10a0d10a0d10a0d10a0d10a0d1
+      profiles:
+        - x-zab.capture/1
+      layout:
+        kind: frame
+        size: { w: 1920, h: 1080 }
+        children:
+          - kind: x-zab.capture
+            id: desktop-audio
+            x-zab.sourceKind: media.system_audio
+            x-zab.deviceRef: system-audio
+
+steps:
+  - kind: client-sends
+    frame:
+      v: 1
+      type: subscribe
+      token: $TOKEN_OPERATOR
+
+  - kind: server-sends
+    frame:
+      v: 1
+      type: snapshot
+      seq: 1
+      scene_id: capture-system-audio
+      scene_version: $ANY_HASH
+      state: $ANY
